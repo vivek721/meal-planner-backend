@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:14-alpine
+    container_name: meal-planner-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: meal_planner
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d meal_planner"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - meal-planner-network
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: meal-planner-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      # Server Configuration
+      PORT: 3001
+      ENVIRONMENT: development
+
+      # Database Configuration (using service name 'postgres')
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/meal_planner?sslmode=disable
+
+      # JWT Configuration
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production-min-32-chars}
+      JWT_EXPIRATION_HOURS: ${JWT_EXPIRATION_HOURS:-24}
+      JWT_REFRESH_DAYS: ${JWT_REFRESH_DAYS:-30}
+
+      # Security Configuration
+      BCRYPT_COST: ${BCRYPT_COST:-12}
+
+      # CORS Configuration
+      FRONTEND_URL: http://localhost:3000
+
+      # Rate Limiting
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      RATE_LIMIT_PER_MIN: ${RATE_LIMIT_PER_MIN:-100}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - meal-planner-network
+
+networks:
+  meal-planner-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: meal-planner-postgres-data

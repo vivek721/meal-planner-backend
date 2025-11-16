@@ -3,8 +3,11 @@
 
 ---
 
-**Version:** 1.0
-**Last Updated:** 2025-10-14
+> **Note**: This document has been updated for the Golang implementation.
+> The backend was migrated from Node.js/TypeScript to Golang on October 16, 2025.
+
+**Version:** 2.0
+**Last Updated:** 2025-10-17
 **Compliance:** OWASP Top 10, GDPR
 
 ---
@@ -20,17 +23,19 @@
 - At least 1 special character
 
 **Hashing:**
-```typescript
-import bcrypt from 'bcryptjs';
+```go
+import "golang.org/x/crypto/bcrypt"
 
-const SALT_ROUNDS = 12; // 2^12 iterations (~250ms)
+const SALT_ROUNDS = 12 // Cost factor: 2^12 iterations (~250ms)
 
-async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, SALT_ROUNDS);
+func HashPassword(password string) (string, error) {
+    bytes, err := bcrypt.GenerateFromPassword([]byte(password), SALT_ROUNDS)
+    return string(bytes), err
 }
 
-async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash);
+func VerifyPassword(password, hash string) bool {
+    err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+    return err == nil
 }
 ```
 
@@ -44,23 +49,54 @@ async function verifyPassword(password: string, hash: string): Promise<boolean> 
 ### JWT Token Security
 
 **Token Configuration:**
-```typescript
-import jwt from 'jsonwebtoken';
+```go
+import (
+    "github.com/golang-jwt/jwt/v5"
+    "time"
+)
 
-const ACCESS_TOKEN_EXPIRY = '1h';
-const REFRESH_TOKEN_EXPIRY = '7d';
-const JWT_SECRET = process.env.JWT_SECRET; // 256-bit random, never in code
+const (
+    AccessTokenExpiry  = time.Hour        // 1 hour
+    RefreshTokenExpiry = 7 * 24 * time.Hour // 7 days
+)
 
-function generateAccessToken(payload: TokenPayload): string {
-  return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: ACCESS_TOKEN_EXPIRY,
-    algorithm: 'HS256',
-  });
+type TokenClaims struct {
+    UserID string `json:"userId"`
+    Email  string `json:"email"`
+    Role   string `json:"role"`
+    jwt.RegisteredClaims
+}
+
+func GenerateAccessToken(payload TokenClaims) (string, error) {
+    payload.ExpiresAt = jwt.NewNumericDate(time.Now().Add(AccessTokenExpiry))
+    payload.IssuedAt = jwt.NewNumericDate(time.Now())
+
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
+    return token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+}
+
+func ValidateToken(tokenString string) (*TokenClaims, error) {
+    token, err := jwt.ParseWithClaims(tokenString, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+        if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+            return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+        }
+        return []byte(os.Getenv("JWT_SECRET")), nil
+    })
+
+    if err != nil {
+        return nil, err
+    }
+
+    if claims, ok := token.Claims.(*TokenClaims); ok && token.Valid {
+        return claims, nil
+    }
+
+    return nil, fmt.Errorf("invalid token")
 }
 ```
 
 **Security Measures:**
-- Secret stored in AWS Secrets Manager
+- Secret stored in AWS Secrets Manager or environment variables
 - Rotate secret quarterly
 - Use HTTPS only (no HTTP)
 - Token blacklist on logout (Redis)
@@ -78,25 +114,25 @@ function generateAccessToken(payload: TokenPayload): string {
 - HSTS enabled (max-age: 31536000, includeSubDomains)
 - SSL/TLS certificate auto-renewed (AWS Certificate Manager)
 
-**Express Configuration:**
-```typescript
-import helmet from 'helmet';
+**Gin Security Middleware:**
+```go
+import "github.com/gin-contrib/secure"
 
-app.use(helmet({
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true,
-  },
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", 'https://cdn.mealplanner.com'],
-    },
-  },
-}));
+func SecurityMiddleware() gin.HandlerFunc {
+    return secure.New(secure.Config{
+        STSSeconds:            31536000,
+        STSIncludeSubdomains:  true,
+        FrameDeny:             true,
+        ContentTypeNosniff:    true,
+        BrowserXssFilter:      true,
+        ReferrerPolicy:        "no-referrer",
+        ContentSecurityPolicy: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://cdn.mealplanner.com",
+    })
+}
+
+// Usage
+r := gin.Default()
+r.Use(SecurityMiddleware())
 ```
 
 ---
@@ -139,40 +175,56 @@ app.use(helmet({
 ### Prevent SQL Injection
 
 **Always use parameterized queries:**
-```typescript
+```go
 // ❌ NEVER DO THIS
-const query = `SELECT * FROM users WHERE email = '${email}'`;
+query := fmt.Sprintf("SELECT * FROM users WHERE email = '%s'", email)
 
-// ✅ ALWAYS DO THIS (Prisma)
-const user = await prisma.user.findUnique({
-  where: { email },
-});
+// ✅ ALWAYS DO THIS (GORM)
+var user models.User
+db.Where("email = ?", email).First(&user)
 
 // ✅ OR THIS (Raw SQL with parameters)
-const user = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+db.Raw("SELECT * FROM users WHERE email = ?", email).Scan(&user)
 ```
+
+**GORM prevents SQL injection automatically** through parameterized queries.
 
 ---
 
 ### Prevent XSS (Cross-Site Scripting)
 
 **Sanitize all user inputs:**
-```typescript
-import { escape } from 'validator';
+```go
+import (
+    "github.com/go-playground/validator/v10"
+    "html"
+)
 
-function sanitizeInput(input: string): string {
-  return escape(input.trim());
+func SanitizeInput(input string) string {
+    return html.EscapeString(strings.TrimSpace(input))
 }
 
-// Or use Zod for automatic validation
-const schema = z.object({
-  name: z.string().min(2).max(255),
-  email: z.string().email(),
-});
+// Use validator for automatic validation
+type RegisterRequest struct {
+    Name     string `json:"name" binding:"required,min=2,max=255"`
+    Email    string `json:"email" binding:"required,email"`
+    Password string `json:"password" binding:"required,min=8,password"`
+}
+
+func (h *AuthHandler) Register(c *gin.Context) {
+    var req RegisterRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+        return
+    }
+
+    // Input is validated and sanitized
+    // ...
+}
 ```
 
 **Content Security Policy:**
-- Set CSP headers (via Helmet.js)
+- Set CSP headers (via secure middleware)
 - Disable inline scripts
 - Whitelist trusted domains
 
@@ -181,19 +233,26 @@ const schema = z.object({
 ### Prevent CSRF (Cross-Site Request Forgery)
 
 **For state-changing operations:**
-```typescript
-import csrf from 'csurf';
+```go
+import "github.com/gin-contrib/csrf"
 
-const csrfProtection = csrf({ cookie: true });
+// CSRF middleware
+r.Use(csrf.Middleware(csrf.Options{
+    Secret: os.Getenv("CSRF_SECRET"),
+    ErrorFunc: func(c *gin.Context) {
+        c.JSON(http.StatusForbidden, gin.H{"error": "CSRF token invalid"})
+        c.Abort()
+    },
+}))
 
-app.post('/api/v1/recipes', csrfProtection, (req, res) => {
-  // CSRF token validated automatically
-});
+// Protected routes
+r.POST("/api/v1/recipes", csrfMiddleware, recipeHandler.Create)
 ```
 
 **Alternative for JWT:**
 - SameSite cookie attribute: `SameSite=Strict`
 - Double-submit cookie pattern
+- For API-only (no browser cookies), CSRF is less of a concern
 
 ---
 
@@ -201,25 +260,49 @@ app.post('/api/v1/recipes', csrfProtection, (req, res) => {
 
 ### API Rate Limits
 
-```typescript
-import rateLimit from 'express-rate-limit';
+```go
+import (
+    "github.com/ulule/limiter/v3"
+    "github.com/ulule/limiter/v3/drivers/middleware/gin"
+    "github.com/ulule/limiter/v3/drivers/store/memory"
+)
 
-const generalLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 100, // 100 requests per minute per IP
-  message: { error: { code: 'RATE_LIMIT_EXCEEDED' } },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+// General rate limiter
+func RateLimitMiddleware() gin.HandlerFunc {
+    rate := limiter.Rate{
+        Period: 1 * time.Minute,
+        Limit:  100, // 100 requests per minute per IP
+    }
+    store := memory.NewStore()
+    instance := limiter.New(store, rate)
+    return ginlimiter.NewMiddleware(instance)
+}
 
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 login attempts
-  skipSuccessfulRequests: true,
-});
+// Auth-specific rate limiter
+func AuthRateLimitMiddleware() gin.HandlerFunc {
+    rate := limiter.Rate{
+        Period: 15 * time.Minute,
+        Limit:  5, // 5 login attempts per 15 minutes
+    }
+    store := memory.NewStore()
+    instance := limiter.New(store, rate)
+    return ginlimiter.NewMiddleware(instance)
+}
 
-app.use('/api/v1', generalLimiter);
-app.post('/api/v1/auth/login', authLimiter, authController.login);
+// Usage
+r.Use(RateLimitMiddleware())
+r.POST("/api/v1/auth/login", AuthRateLimitMiddleware(), authHandler.Login)
+```
+
+**Redis-backed rate limiting** (for distributed systems):
+```go
+import "github.com/ulule/limiter/v3/drivers/store/redis"
+
+store, err := redis.NewStoreWithOptions(redisClient, limiter.StoreOptions{
+    Prefix:   "limiter",
+})
+
+instance := limiter.New(store, rate)
 ```
 
 ---
@@ -235,20 +318,48 @@ app.post('/api/v1/auth/login', authLimiter, authController.login);
 - Third-party API keys
 
 **Retrieve at Runtime:**
-```typescript
-import { SecretsManager } from '@aws-sdk/client-secrets-manager';
+```go
+import (
+    "context"
+    "github.com/aws/aws-sdk-go-v2/config"
+    "github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+)
 
-async function getSecret(secretName: string): Promise<string> {
-  const client = new SecretsManager({ region: 'us-east-1' });
+func GetSecret(ctx context.Context, secretName string) (string, error) {
+    cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion("us-east-1"))
+    if err != nil {
+        return "", err
+    }
 
-  const response = await client.getSecretValue({ SecretId: secretName });
+    client := secretsmanager.NewFromConfig(cfg)
 
-  return response.SecretString;
+    result, err := client.GetSecretValue(ctx, &secretsmanager.GetSecretValueInput{
+        SecretId: &secretName,
+    })
+
+    if err != nil {
+        return "", err
+    }
+
+    return *result.SecretString, nil
 }
 
 // Use in startup
-const jwtSecret = await getSecret('production/jwt/secret');
-process.env.JWT_SECRET = jwtSecret;
+func LoadSecrets(ctx context.Context) error {
+    jwtSecret, err := GetSecret(ctx, "production/jwt/secret")
+    if err != nil {
+        return err
+    }
+    os.Setenv("JWT_SECRET", jwtSecret)
+
+    dbPassword, err := GetSecret(ctx, "production/db/password")
+    if err != nil {
+        return err
+    }
+    os.Setenv("DB_PASSWORD", dbPassword)
+
+    return nil
+}
 ```
 
 **Rotation:**
@@ -260,53 +371,71 @@ process.env.JWT_SECRET = jwtSecret;
 
 ## Security Headers
 
-### Helmet.js Configuration
+### Gin Security Configuration
 
-```typescript
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", 'https://cdn.mealplanner.com'],
-    },
-  },
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-  },
-  frameguard: { action: 'deny' },
-  noSniff: true,
-  xssFilter: true,
-  referrerPolicy: { policy: 'no-referrer' },
-}));
+```go
+import "github.com/gin-contrib/secure"
+
+r.Use(secure.New(secure.Config{
+    // HSTS
+    STSSeconds:           31536000,
+    STSIncludeSubdomains: true,
+    STSPreload:           true,
+
+    // Content Security Policy
+    ContentSecurityPolicy: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://cdn.mealplanner.com",
+
+    // Other headers
+    FrameDeny:             true,
+    ContentTypeNosniff:    true,
+    BrowserXssFilter:      true,
+    ReferrerPolicy:        "no-referrer",
+    FeaturePolicy:         "geolocation 'none'",
+}))
 ```
 
 ---
 
 ## CORS Configuration
 
-```typescript
-import cors from 'cors';
+```go
+import "github.com/gin-contrib/cors"
 
-const allowedOrigins = [
-  'https://app.mealplanner.com',
-  'http://localhost:5173', // Dev only
-];
+func CORSMiddleware() gin.HandlerFunc {
+    return cors.New(cors.Config{
+        AllowOrigins:     []string{"https://app.mealplanner.com", "http://localhost:3000"},
+        AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+        AllowHeaders:     []string{"Content-Type", "Authorization"},
+        ExposeHeaders:    []string{"Content-Length"},
+        AllowCredentials: true,
+        MaxAge:           12 * time.Hour,
+    })
+}
 
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+// Usage
+r.Use(CORSMiddleware())
+```
+
+**Production configuration:**
+```go
+func CORSMiddleware() gin.HandlerFunc {
+    allowedOrigins := strings.Split(os.Getenv("ALLOWED_ORIGINS"), ",")
+
+    return cors.New(cors.Config{
+        AllowOriginFunc: func(origin string) bool {
+            for _, allowed := range allowedOrigins {
+                if origin == allowed {
+                    return true
+                }
+            }
+            return false
+        },
+        AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
+        AllowHeaders:     []string{"Content-Type", "Authorization"},
+        AllowCredentials: true,
+        MaxAge:           12 * time.Hour,
+    })
+}
 ```
 
 ---
@@ -316,28 +445,57 @@ app.use(cors({
 ### User Rights
 
 **Right to Access:**
-```typescript
+```go
 // GET /users/:id/export
-async exportUserData(userId: string): Promise<object> {
-  return {
-    user: await prisma.user.findUnique({ where: { id: userId } }),
-    mealPlans: await prisma.mealPlan.findMany({ where: { userId } }),
-    favorites: await prisma.favorite.findMany({ where: { userId } }),
-    activities: await prisma.activity.findMany({ where: { userId } }),
-  };
+func (s *UserService) ExportUserData(ctx context.Context, userID string) (map[string]interface{}, error) {
+    var user models.User
+    if err := s.db.First(&user, "id = ?", userID).Error; err != nil {
+        return nil, err
+    }
+
+    var mealPlans []models.MealPlan
+    s.db.Find(&mealPlans, "user_id = ?", userID)
+
+    var favorites []models.Favorite
+    s.db.Find(&favorites, "user_id = ?", userID)
+
+    var activities []models.Activity
+    s.db.Find(&activities, "user_id = ?", userID)
+
+    return map[string]interface{}{
+        "user":       user,
+        "mealPlans":  mealPlans,
+        "favorites":  favorites,
+        "activities": activities,
+        "exportedAt": time.Now(),
+    }, nil
 }
 ```
 
 **Right to Erasure:**
-```typescript
+```go
 // DELETE /users/:id (soft delete)
-async deleteUser(userId: string): Promise<void> {
-  await prisma.user.update({
-    where: { id: userId },
-    data: { deletedAt: new Date() },
-  });
+func (s *UserService) DeleteUser(ctx context.Context, userID string) error {
+    // Soft delete (sets deleted_at timestamp)
+    if err := s.db.Delete(&models.User{}, "id = ?", userID).Error; err != nil {
+        return err
+    }
 
-  // Anonymize data after 30 days (cron job)
+    // Schedule anonymization after 30 days (handled by cron job)
+    return nil
+}
+
+// Anonymization (run by cron after 30 days)
+func (s *UserService) AnonymizeDeletedUsers(ctx context.Context) error {
+    thirtyDaysAgo := time.Now().AddDate(0, 0, -30)
+
+    return s.db.Model(&models.User{}).
+        Where("deleted_at < ?", thirtyDaysAgo).
+        Updates(map[string]interface{}{
+            "email":    "deleted@deleted.com",
+            "name":     "Deleted User",
+            "password": "",
+        }).Error
 }
 ```
 
@@ -355,14 +513,19 @@ async deleteUser(userId: string): Promise<void> {
 
 ```bash
 # Run weekly in CI/CD
-npm audit --audit-level=moderate
+go list -m all  # List all dependencies
 
-# Fix automatically
-npm audit fix
+# Vulnerability scanning with govulncheck
+go install golang.org/x/vuln/cmd/govulncheck@latest
+govulncheck ./...
 
-# Use Snyk for continuous monitoring
-npx snyk test
-npx snyk monitor
+# Security scanning with gosec
+go install github.com/securego/gosec/v2/cmd/gosec@latest
+gosec ./...
+
+# Dependency updates
+go get -u all
+go mod tidy
 ```
 
 **Alert Thresholds:**
@@ -428,8 +591,8 @@ docker run -t owasp/zap2docker-stable zap-baseline.py \
 
 ### Development
 
-- [ ] All inputs validated (Zod schemas)
-- [ ] Parameterized queries (no string concatenation)
+- [ ] All inputs validated (go-playground/validator)
+- [ ] Parameterized queries (GORM or ? placeholders)
 - [ ] Passwords hashed with bcrypt (12+ rounds)
 - [ ] No secrets in code (environment variables)
 - [ ] Error messages don't leak sensitive info
@@ -437,14 +600,14 @@ docker run -t owasp/zap2docker-stable zap-baseline.py \
 ### Deployment
 
 - [ ] HTTPS only (TLS 1.3)
-- [ ] Security headers (Helmet.js)
+- [ ] Security headers (secure middleware)
 - [ ] CORS properly configured
 - [ ] Rate limiting enabled
 - [ ] Secrets in AWS Secrets Manager
 
 ### Operations
 
-- [ ] npm audit shows zero high/critical
+- [ ] govulncheck shows zero high/critical
 - [ ] Security updates applied within SLA
 - [ ] Backups tested quarterly
 - [ ] Incident response plan documented
@@ -452,6 +615,30 @@ docker run -t owasp/zap2docker-stable zap-baseline.py \
 
 ---
 
-**Document Version:** 1.0
-**Last Updated:** 2025-10-14
-**Next Review:** 2026-01-14 (Quarterly)
+## Go-Specific Security Best Practices
+
+### Memory Safety
+- Go prevents buffer overflows and memory corruption
+- Use `defer` for cleanup to prevent resource leaks
+- No manual memory management
+
+### Concurrency Safety
+- Use mutexes for shared state: `sync.Mutex`, `sync.RWMutex`
+- Use channels for communication between goroutines
+- Avoid race conditions (test with `go test -race`)
+
+### Error Handling
+- Always check errors: `if err != nil`
+- Don't expose internal errors to users
+- Log detailed errors, return generic messages
+
+### Type Safety
+- Strong static typing prevents many bugs
+- Use `interface{}` sparingly
+- Leverage compiler checks
+
+---
+
+**Document Version:** 2.0
+**Last Updated:** 2025-10-17
+**Next Review:** 2026-01-17 (Quarterly)

@@ -3,15 +3,40 @@
 
 ---
 
-**Version:** 1.0
-**Last Updated:** 2025-10-14
-**Status:** Complete - Ready for Implementation
+**Version:** 1.1
+**Last Updated:** 2025-10-17
+**Status:** Golang Implementation (Epic 1 Complete)
+
+---
+
+## Important Notice - Technology Change
+
+**The backend has been migrated from Node.js/TypeScript to Golang.**
+
+**Current Implementation:**
+- Language: Go 1.21+
+- Framework: Gin (web framework)
+- ORM: GORM
+- Database: PostgreSQL
+- Status: Epic 1 (Authentication) - 100% Complete
+
+**Original Planning (Archived):**
+- Node.js/Express/TypeScript documentation is preserved in `archive/` for reference
+- Core architectural concepts remain valid regardless of implementation language
+- See `archive/ARCHIVE_NOTE.md` for migration details
+
+**For Current Documentation:**
+- See `/backend/README.md` - Golang implementation guide
+- See `/backend/IMPLEMENTATION_SUMMARY.md` - Epic 1 summary
+- See `/backend/DOCKER.md` - Docker setup for Golang backend
 
 ---
 
 ## Overview
 
-This folder contains comprehensive backend architecture and planning documentation for the AI-Powered Meal Planner application. The frontend is complete with a fully functional React application using mock data. This backend documentation provides everything needed to build production-ready services that seamlessly integrate with the existing frontend.
+This folder contains comprehensive backend architecture and planning documentation for the AI-Powered Meal Planner application. While originally planned for Node.js/TypeScript, the backend has been successfully implemented in Golang with significant improvements in performance and deployment simplicity.
+
+The documentation below reflects the original planning phase. The core architectural concepts (layered architecture, API contracts, database design) remain valid and have been adapted to Golang idioms.
 
 ---
 

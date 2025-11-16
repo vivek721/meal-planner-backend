@@ -1,37 +1,41 @@
-# Dependencies
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+tmp/
 
-# Build output
-dist/
-build/
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.html
+
+# Go workspace file
+go.work
 
 # Environment variables
 .env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*.local
 
-# IDE
-.vscode/
+# IDEs
 .idea/
+.vscode/
 *.swp
 *.swo
 *~
-.DS_Store
 
-# Testing
-coverage/
-.nyc_output/
+# OS
+.DS_Store
+Thumbs.db
+
+# Air (hot reload)
+tmp/
+build-errors.log
 
 # Logs
-logs/
 *.log
-
-# Temp files
-tmp/
-temp/

@@ -3,8 +3,9 @@
 
 ---
 
-**Version:** 1.0
-**Last Updated:** 2025-10-14
+**Version:** 2.0
+**Last Updated:** 2025-10-17
+**Migration:** Node.js/TypeScript → Golang (October 2025)
 
 ---
 
@@ -12,70 +13,94 @@
 
 This document provides detailed justification for all technology choices in the backend stack, including alternatives considered and decision rationale.
 
+**Technology Migration Note:**
+This backend was initially planned for Node.js + Express + TypeScript but was migrated to **Golang** for superior performance, simpler deployment, and better concurrency. This document reflects the current Golang implementation.
+
 ---
 
 ## Core Technologies
 
-### 1. Runtime: Node.js 20 LTS
+### 1. Runtime: Go 1.21+
 
-**Purpose:** JavaScript runtime for backend services
+**Purpose:** Primary programming language for backend services
 
-**Why Node.js:**
-- **JavaScript Consistency:** Same language as React frontend, easier to find full-stack developers
-- **Async I/O:** Non-blocking, perfect for I/O-heavy operations (database, API calls)
-- **Mature Ecosystem:** 2M+ npm packages, battle-tested libraries
-- **Performance:** V8 engine, comparable to Go/Java for web services
-- **Long-Term Support:** LTS version ensures stability for 30+ months
+**Why Golang:**
+- **Performance:** Compiled language, 10-40x faster than Node.js for CPU-intensive tasks
+- **Concurrency:** Built-in goroutines and channels for efficient concurrent operations
+- **Simple Deployment:** Single binary, no runtime dependencies
+- **Memory Efficiency:** Low memory footprint (~15MB idle vs ~50MB+ for Node.js)
+- **Type Safety:** Strong static typing with compile-time and runtime checks
+- **Standard Library:** Comprehensive stdlib reduces external dependencies
+- **Fast Compilation:** Sub-second builds for rapid development
+- **Production Ready:** Used by Google, Uber, Dropbox, Docker, Kubernetes
 
 **Alternatives Considered:**
-- **Python + FastAPI:** Better for ML (but we use AWS Personalize), slower for I/O
-- **Go:** Faster, but smaller ecosystem, steeper learning curve
-- **Java + Spring Boot:** Enterprise-grade, but heavier, slower development
+- **Node.js + TypeScript:** Originally planned, but Golang offers better performance and simpler deployment
+- **Python + FastAPI:** Good for ML, but slower and heavier than Go
+- **Java + Spring Boot:** Enterprise-grade, but much heavier and slower builds
+- **Rust:** Excellent performance, but steeper learning curve and longer compile times
 
 **Configuration:**
-```json
-{
-  "engines": {
-    "node": ">=20.0.0",
-    "npm": ">=10.0.0"
-  }
-}
+```go
+// go.mod
+module meal-planner-backend
+
+go 1.21
+
+require (
+    github.com/gin-gonic/gin v1.9.1
+    gorm.io/gorm v1.25.5
+    gorm.io/driver/postgres v1.5.4
+    github.com/golang-jwt/jwt/v5 v5.2.0
+    golang.org/x/crypto v0.17.0
+)
 ```
 
 ---
 
-### 2. Framework: Express.js 4.x
+### 2. Framework: Gin Web Framework
 
-**Purpose:** Web application framework
+**Purpose:** HTTP web framework
 
-**Why Express:**
-- **Battle-Tested:** 15+ years in production, powers Netflix, Uber
-- **Minimalist:** Unopinionated, flexible, easy to customize
-- **Middleware Ecosystem:** Extensive plugins for auth, validation, logging
-- **Performance:** Handles 10K+ req/sec on modest hardware
-- **Community:** Largest Node.js framework community
+**Why Gin:**
+- **Performance:** Fastest Go web framework (up to 40x faster than Express.js)
+- **Routing:** Radix tree-based router with zero memory allocation
+- **Middleware:** Extensive middleware ecosystem
+- **JSON Handling:** Built-in JSON validation and binding
+- **Error Handling:** Panic recovery and error management
+- **Community:** Large ecosystem, actively maintained
+- **Production Usage:** Used by major companies worldwide
 
 **Alternatives Considered:**
-- **Fastify:** Faster (2x Express), but smaller ecosystem, less mature
-- **NestJS:** TypeScript-first, more opinionated, heavier framework
-- **Koa:** Lighter than Express, but smaller community
-
-**Decision:** Express for familiarity and ecosystem. Consider Fastify for v2 if performance bottleneck.
+- **Echo:** Similar performance, slightly different API
+- **Fiber:** Express.like API, but uses fasthttp (different from net/http)
+- **Chi:** Lightweight, but less feature-rich than Gin
+- **Standard net/http:** Minimal, but requires more boilerplate
 
 **Example Setup:**
-```typescript
-import express from 'express';
-import helmet from 'helmet';
-import cors from 'cors';
+```go
+package main
 
-const app = express();
+import (
+    "github.com/gin-gonic/gin"
+    "github.com/gin-contrib/cors"
+)
 
-app.use(helmet());
-app.use(cors({ origin: process.env.FRONTEND_URL }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+func main() {
+    router := gin.Default()
 
-export default app;
+    // CORS middleware
+    config := cors.DefaultConfig()
+    config.AllowOrigins = []string{"http://localhost:3000"}
+    config.AllowHeaders = []string{"Authorization", "Content-Type"}
+    router.Use(cors.New(config))
+
+    // Routes
+    router.POST("/api/auth/register", registerHandler)
+    router.POST("/api/auth/login", loginHandler)
+
+    router.Run(":3001")
+}
 ```
 
 ---
@@ -90,6 +115,7 @@ export default app;
 - **Full-Text Search:** Built-in tsvector, GIN indexes (no Elasticsearch initially)
 - **Performance:** Handles millions of rows, excellent query planner
 - **Open Source:** No licensing costs, huge community
+- **Production Ready:** Battle-tested in production environments worldwide
 
 **Alternatives Considered:**
 - **MongoDB:** NoSQL, flexible schema, but lacks ACID, complex queries harder
@@ -98,82 +124,303 @@ export default app;
 
 **Decision:** PostgreSQL for ACID + JSON flexibility. Migrate to Aurora if needed at scale.
 
-**Configuration (RDS):**
-- Instance: db.t3.small (2 vCPU, 2 GB RAM)
+**Configuration (Local/Docker):**
+- Database: `meal_planner`
+- User: `postgres`
+- Port: 5432
+- Connection pooling via GORM
+
+**Configuration (Production):**
+- Instance: AWS RDS db.t3.small (2 vCPU, 2 GB RAM)
 - Storage: 100 GB GP3 SSD (auto-scaling to 1 TB)
 - Multi-AZ: Yes (high availability)
 - Backups: Automated daily, 30-day retention, PITR enabled
 
 ---
 
-### 4. Cache: Redis 7
+### 4. ORM: GORM
 
-**Purpose:** In-memory cache and session store
+**Purpose:** Database ORM and migrations
 
-**Why Redis:**
-- **Speed:** Microsecond latency, perfect for caching
-- **Versatility:** Cache, sessions, rate limiting, job queues (Bull)
-- **Data Structures:** Strings, hashes, lists, sets (flexible use cases)
-- **Persistence:** RDB snapshots + AOF log (durability)
-- **Replication:** Primary-replica for high availability
+**Why GORM:**
+- **Feature-Rich:** Associations, hooks, transactions, migrations
+- **Developer Experience:** Intuitive, chainable API
+- **Type-Safe:** Strong typing with Go structs
+- **Auto-Migration:** Automatic schema creation/updates
+- **Performance:** Query optimization, connection pooling
+- **Community:** Largest Go ORM, actively maintained
 
 **Alternatives Considered:**
-- **Memcached:** Simpler, faster, but no persistence, fewer data structures
-- **DynamoDB:** AWS-managed, expensive for caching use case
-- **Application-level cache:** LRU cache, but not shared across servers
+- **SQLBoiler:** Code generation approach, complex setup
+- **Ent:** Facebook's ORM, powerful but more complex
+- **sqlx:** Query builder, flexible but no auto-migrations
 
-**Configuration (ElastiCache):**
-- Instance: cache.t3.micro (2 vCPU, 0.5 GB RAM)
-- Nodes: 2 (primary + replica, auto-failover)
-- Encryption: In-transit and at-rest
+**Model Example:**
+```go
+type User struct {
+    ID                      string     `gorm:"primaryKey"`
+    Email                   string     `gorm:"unique;not null"`
+    PasswordHash            string     `gorm:"column:password_hash;not null"`
+    Name                    string
+    HasCompletedOnboarding  bool       `gorm:"default:false"`
+    CreatedAt               time.Time
+    UpdatedAt               time.Time
+    DeletedAt               gorm.DeletedAt `gorm:"index"`
 
-**Cache Strategy:**
-```typescript
-// Cache recipe details (1 hour TTL)
-const cacheKey = `recipe:${id}`;
-const cached = await redis.get(cacheKey);
+    // Login tracking
+    LoginAttempts           int        `gorm:"default:0"`
+    LastLoginAttempt        *time.Time
+    AccountLockedUntil      *time.Time
 
-if (cached) {
-  return JSON.parse(cached);
+    // Preferences (embedded)
+    PrefTheme               string     `gorm:"default:'light'"`
+    PrefNotifications       bool       `gorm:"default:true"`
 }
-
-const recipe = await db.recipes.findById(id);
-await redis.setex(cacheKey, 3600, JSON.stringify(recipe));
-return recipe;
 ```
 
 ---
 
-### 5. Cloud Provider: AWS
+### 5. Authentication: JWT (golang-jwt)
+
+**Purpose:** Stateless authentication
+
+**Why JWT:**
+- **Stateless:** No server-side session storage, scalable
+- **Self-Contained:** All user info in token payload
+- **Standard:** RFC 7519, widely adopted
+- **Flexible:** Works across domains, mobile apps
+- **Go Library:** `github.com/golang-jwt/jwt/v5` - official JWT implementation
+
+**Alternatives Considered:**
+- **Session-Based:** Requires session store (Redis), not stateless
+- **OAuth 2.0 Only:** Adds complexity, requires provider setup
+
+**Token Structure:**
+```go
+type Claims struct {
+    UserID string `json:"userId"`
+    Email  string `json:"email"`
+    jwt.RegisteredClaims
+}
+
+// Token generation
+token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+signedToken, _ := token.SignedString([]byte(jwtSecret))
+```
+
+**Security:**
+- Algorithm: HS256 (HMAC SHA-256)
+- Secret: 256-bit random (stored in environment variables)
+- Access token expiry: 24 hours (configurable)
+- Refresh mechanism: 30-day refresh period
+- Token validation on all protected routes
+
+---
+
+### 6. Password Hashing: Bcrypt
+
+**Purpose:** Secure password hashing
+
+**Why Bcrypt:**
+- **Industry Standard:** Battle-tested algorithm
+- **Adaptive:** Cost factor can be increased over time
+- **Salt Included:** Automatic salt generation
+- **Resistant:** Protects against rainbow table attacks
+- **Go Support:** `golang.org/x/crypto/bcrypt` - official implementation
+
+**Configuration:**
+```go
+import "golang.org/x/crypto/bcrypt"
+
+const DefaultCost = 12 // ~250ms on modern hardware
+
+func HashPassword(password string) (string, error) {
+    bytes, err := bcrypt.GenerateFromPassword(
+        []byte(password),
+        DefaultCost,
+    )
+    return string(bytes), err
+}
+
+func CheckPassword(password, hash string) error {
+    return bcrypt.CompareHashAndPassword(
+        []byte(hash),
+        []byte(password),
+    )
+}
+```
+
+---
+
+### 7. Validation: Built-in + Custom Validators
+
+**Purpose:** Input validation
+
+**Why Custom + Built-in:**
+- **Native Go:** No external dependencies for basic validation
+- **Type Safety:** Compile-time checking with struct tags
+- **Custom Logic:** Easy to implement custom validators
+- **Performance:** Zero allocation for many operations
+
+**Example:**
+```go
+// Gin binding with validation
+type RegisterRequest struct {
+    Email    string `json:"email" binding:"required,email"`
+    Password string `json:"password" binding:"required,min=8"`
+    Name     string `json:"name"`
+}
+
+// Custom validator
+func ValidatePasswordStrength(password string) error {
+    if len(password) < 8 {
+        return errors.New("password must be at least 8 characters")
+    }
+    hasUpper := regexp.MustCompile(`[A-Z]`).MatchString(password)
+    hasLower := regexp.MustCompile(`[a-z]`).MatchString(password)
+    hasNumber := regexp.MustCompile(`[0-9]`).MatchString(password)
+    hasSpecial := regexp.MustCompile(`[!@#$%^&*]`).MatchString(password)
+
+    if !hasUpper || !hasLower || !hasNumber || !hasSpecial {
+        return errors.New("password must contain upper, lower, number, and special character")
+    }
+    return nil
+}
+```
+
+---
+
+### 8. Development: Air (Hot Reload)
+
+**Purpose:** Live reload during development
+
+**Why Air:**
+- **Fast:** Instant reload on file changes
+- **Configurable:** Support for custom build commands
+- **Go-Specific:** Designed for Go applications
+- **Zero Config:** Works out of the box with sensible defaults
+
+**Configuration:**
+```toml
+# .air.toml
+[build]
+  cmd = "go build -o ./bin/meal-planner-api ./cmd/server"
+  bin = "./bin/meal-planner-api"
+  include_ext = ["go"]
+  exclude_dir = ["bin", "vendor"]
+  delay = 1000
+```
+
+---
+
+### 9. Testing: Go Testing Framework
+
+**Purpose:** Unit and integration testing
+
+**Why Go's Built-in Testing:**
+- **Native:** No external framework needed
+- **Fast:** Parallel test execution
+- **Simple:** Minimal syntax, easy to learn
+- **Coverage:** Built-in coverage reporting
+- **Benchmarking:** Performance testing included
+
+**Example:**
+```go
+func TestHashPassword(t *testing.T) {
+    password := "TestPassword123!"
+    hash, err := HashPassword(password)
+
+    if err != nil {
+        t.Errorf("HashPassword failed: %v", err)
+    }
+
+    if hash == password {
+        t.Error("Hash should not equal plain password")
+    }
+
+    if err := CheckPassword(password, hash); err != nil {
+        t.Error("Password verification failed")
+    }
+}
+```
+
+---
+
+### 10. Deployment: Docker
+
+**Purpose:** Containerization
+
+**Why Docker:**
+- **Consistency:** Same environment dev → production
+- **Isolation:** Dependencies packaged, no conflicts
+- **Portability:** Run anywhere (AWS, GCP, on-prem)
+- **Single Binary:** Go compiles to single executable
+
+**Multi-Stage Dockerfile:**
+```dockerfile
+# Build stage
+FROM golang:1.21-alpine AS builder
+WORKDIR /app
+COPY go.* ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o meal-planner-api ./cmd/server
+
+# Production stage
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates
+WORKDIR /root/
+COPY --from=builder /app/meal-planner-api .
+EXPOSE 3001
+CMD ["./meal-planner-api"]
+```
+
+**Benefits:**
+- **Small Image:** ~15-20MB (Alpine + binary)
+- **Fast Startup:** < 100ms
+- **Secure:** Minimal attack surface
+- **Efficient:** Low resource usage
+
+---
+
+### 11. Cloud Provider: AWS (Planned)
 
 **Purpose:** Infrastructure hosting
 
 **Why AWS:**
 - **Market Leader:** 32% cloud market share, most mature platform
-- **Service Breadth:** RDS, ElastiCache, S3, ECS, Personalize (all-in-one)
+- **Service Breadth:** RDS, ElastiCache, S3, ECS, Lambda (all-in-one)
 - **Reliability:** 99.99% SLA, global infrastructure
 - **Pricing:** Competitive, free tier for 12 months
 - **Ecosystem:** Largest community, best documentation
 
 **Alternatives Considered:**
-- **GCP:** Good for ML (but AWS Personalize sufficient), smaller ecosystem
+- **GCP:** Good for ML, but AWS has better PostgreSQL support
 - **Azure:** Enterprise focus, less popular for startups
 - **DigitalOcean:** Simple, cheap, but limited managed services
+- **Railway/Render:** Simple deployment, good for MVP
 
-**Key AWS Services:**
-| Service | Purpose | Monthly Cost (Year 1) |
-|---------|---------|----------------------|
-| ECS Fargate | API containers | $50 |
+**Key AWS Services (Planned):**
+| Service | Purpose | Monthly Cost (Est.) |
+|---------|---------|---------------------|
+| ECS Fargate | API containers | $30-50 |
 | RDS PostgreSQL | Database | $30 |
-| ElastiCache Redis | Cache | $15 |
-| S3 + CloudFront | Image storage/CDN | $20 |
-| Secrets Manager | Credentials | $5 |
+| ElastiCache Redis | Cache (future) | $15 |
+| S3 + CloudFront | Image storage/CDN | $10 |
+| Secrets Manager | Credentials | $1 |
 | CloudWatch | Monitoring/logs | $5 |
-| **Total** | | **$125** |
+| **Total** | | **~$90-110** |
+
+**Docker Deployment Options:**
+- **ECS Fargate:** Serverless containers (recommended)
+- **Google Cloud Run:** Serverless containers
+- **Azure Container Instances:** Serverless containers
+- **Railway/Render:** Simple PaaS deployment
+- **DigitalOcean App Platform:** Budget-friendly option
 
 ---
 
-### 6. Storage: AWS S3 + CloudFront
+### 12. Storage: AWS S3 + CloudFront (Planned)
 
 **Purpose:** Image storage and delivery
 
@@ -197,180 +444,7 @@ meal-planner-images-production/
 
 ---
 
-### 7. ORM: Prisma
-
-**Purpose:** Database ORM and migrations
-
-**Why Prisma:**
-- **Type-Safe:** Auto-generated TypeScript types from schema
-- **Developer Experience:** Intuitive API, excellent autocomplete
-- **Migrations:** Built-in migration tool, version control
-- **Performance:** Optimized queries, connection pooling
-
-**Alternatives Considered:**
-- **TypeORM:** Mature, Active Record pattern, but less type-safe
-- **Sequelize:** Popular, but callback-heavy, no TypeScript types
-- **Knex.js:** Query builder, flexible, but manual typing
-
-**Schema Example:**
-```prisma
-model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  passwordHash  String    @map("password_hash")
-  name          String
-  role          String    @default("user")
-  preferences   Json      @default("{}")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-  deletedAt     DateTime? @map("deleted_at")
-
-  mealPlans     MealPlan[]
-  favorites     Favorite[]
-
-  @@map("users")
-}
-```
-
----
-
-### 8. Authentication: JWT (jsonwebtoken)
-
-**Purpose:** Stateless authentication
-
-**Why JWT:**
-- **Stateless:** No server-side session storage, scalable
-- **Self-Contained:** All user info in token payload
-- **Standard:** RFC 7519, widely adopted
-- **Flexible:** Works across domains, mobile apps
-
-**Alternatives Considered:**
-- **Session-Based:** Requires session store (Redis), not stateless
-- **OAuth 2.0 Only:** Adds complexity, requires provider setup
-
-**Token Structure:**
-```typescript
-{
-  "userId": "550e8400-e29b-41d4-a716-446655440000",
-  "email": "user@example.com",
-  "role": "user",
-  "iat": 1697280000,
-  "exp": 1697283600  // 1 hour expiry
-}
-```
-
-**Security:**
-- Algorithm: HS256 (HMAC SHA-256)
-- Secret: 256-bit random (stored in AWS Secrets Manager)
-- Access token expiry: 1 hour
-- Refresh token expiry: 7 days
-- Blacklist on logout (Redis)
-
----
-
-### 9. Validation: Zod
-
-**Purpose:** Runtime type validation
-
-**Why Zod:**
-- **TypeScript-First:** Infers TypeScript types from schemas
-- **Composable:** Build complex schemas from simple ones
-- **Error Messages:** Clear, user-friendly validation errors
-- **Performance:** Fast, minimal overhead
-
-**Alternatives Considered:**
-- **Joi:** Popular, but doesn't infer TypeScript types
-- **Yup:** Good, but Zod better TypeScript integration
-- **express-validator:** Works, but less type-safe
-
-**Example:**
-```typescript
-import { z } from 'zod';
-
-const registerSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8).regex(/[A-Z]/).regex(/[0-9]/),
-  name: z.string().min(2).max(255),
-});
-
-type RegisterInput = z.infer<typeof registerSchema>;
-```
-
----
-
-### 10. Testing: Jest + Supertest
-
-**Purpose:** Unit and integration testing
-
-**Why Jest:**
-- **All-in-One:** Test runner, assertion library, mocking, coverage
-- **Fast:** Parallel test execution
-- **Snapshot Testing:** UI component testing
-- **Popular:** Used by Facebook, Airbnb
-
-**Why Supertest:**
-- **HTTP Testing:** Test Express endpoints easily
-- **Integration:** Works seamlessly with Jest
-
-**Example:**
-```typescript
-describe('POST /auth/register', () => {
-  it('should register new user', async () => {
-    const res = await request(app)
-      .post('/api/v1/auth/register')
-      .send({
-        email: 'test@example.com',
-        password: 'Password123!',
-        name: 'Test User',
-      });
-
-    expect(res.status).toBe(201);
-    expect(res.body.data.user.email).toBe('test@example.com');
-  });
-});
-```
-
----
-
-### 11. Deployment: Docker + ECS Fargate
-
-**Purpose:** Containerization and orchestration
-
-**Why Docker:**
-- **Consistency:** Same environment dev → production
-- **Isolation:** Dependencies packaged, no conflicts
-- **Portability:** Run anywhere (AWS, GCP, on-prem)
-
-**Why ECS Fargate:**
-- **Serverless:** No EC2 instances to manage
-- **Auto-Scaling:** Scale to zero, pay per use
-- **Integration:** Native AWS (ALB, CloudWatch, ECR)
-- **Cost:** Cheaper than Kubernetes for small scale
-
-**Alternatives Considered:**
-- **Kubernetes (EKS):** Powerful, but overkill for initial scale, complex
-- **EC2 + Docker:** Manual management, less auto-scaling
-
-**Dockerfile:**
-```dockerfile
-FROM node:20-alpine AS build
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-RUN npm run build
-
-FROM node:20-alpine
-WORKDIR /app
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/node_modules ./node_modules
-EXPOSE 3000
-CMD ["node", "dist/server.js"]
-```
-
----
-
-### 12. CI/CD: GitHub Actions
+### 13. CI/CD: GitHub Actions
 
 **Purpose:** Automated testing and deployment
 
@@ -378,151 +452,155 @@ CMD ["node", "dist/server.js"]
 - **Integrated:** Built into GitHub, no third-party setup
 - **Free:** 2,000 minutes/month for private repos
 - **Flexible:** YAML workflows, easy to customize
-- **Marketplace:** Pre-built actions for AWS, Docker, testing
+- **Marketplace:** Pre-built actions for Go, Docker, AWS
 
 **Alternatives Considered:**
 - **GitLab CI:** Good, but requires GitLab
 - **CircleCI:** Popular, but costs $$ after free tier
 - **Jenkins:** Powerful, but requires self-hosting
 
-**Workflow:**
+**Example Workflow:**
 ```yaml
-name: Deploy
-on:
-  push:
-    branches: [main]
+name: Test and Build
+on: [push, pull_request]
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-      - run: npm ci
-      - run: npm test
-  deploy:
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+      - run: go mod download
+      - run: go test ./...
+      - run: go build ./cmd/server
+
+  build-docker:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to ECS
-        run: |
-          aws ecs update-service --cluster meal-planner --service api --force-new-deployment
+      - uses: actions/checkout@v3
+      - uses: docker/build-push-action@v4
+        with:
+          push: false
+          tags: meal-planner-api:latest
 ```
 
 ---
 
-### 13. Monitoring: CloudWatch + Sentry
+### 14. Monitoring: Prometheus + Grafana (Planned)
 
-**Purpose:** Observability and error tracking
+**Purpose:** Observability and metrics
 
-**Why CloudWatch:**
-- **Native AWS:** Logs, metrics, alarms integrated
-- **Cost-Effective:** $5/month for basic monitoring
-- **Dashboards:** Real-time visualization
+**Why Prometheus + Grafana:**
+- **Open Source:** Free, community-driven
+- **Go Native:** Excellent Go instrumentation libraries
+- **Powerful:** Time-series database, flexible queries
+- **Visualization:** Grafana dashboards
+- **Alerting:** Built-in alert manager
 
-**Why Sentry:**
-- **Error Tracking:** Stack traces, user context, breadcrumbs
-- **Alerting:** Slack/email notifications
-- **Performance:** APM for slow transactions
+**Alternatives:**
+- **CloudWatch:** AWS-native, simpler but less powerful
+- **Datadog:** Commercial, expensive but feature-rich
+- **New Relic:** APM focused, expensive
 
-**Configuration:**
-```typescript
-import * as Sentry from '@sentry/node';
+**Go Prometheus Example:**
+```go
+import (
+    "github.com/prometheus/client_golang/prometheus"
+    "github.com/prometheus/client_golang/prometheus/promhttp"
+)
 
-Sentry.init({
-  dsn: process.env.SENTRY_DSN,
-  environment: process.env.NODE_ENV,
-  tracesSampleRate: 0.1, // 10% of transactions
-});
+var (
+    httpRequestsTotal = prometheus.NewCounterVec(
+        prometheus.CounterOpts{
+            Name: "http_requests_total",
+            Help: "Total HTTP requests",
+        },
+        []string{"method", "endpoint", "status"},
+    )
+)
 
-app.use(Sentry.Handlers.requestHandler());
-app.use(Sentry.Handlers.errorHandler());
-```
-
----
-
-### 14. Email: SendGrid
-
-**Purpose:** Transactional email delivery
-
-**Why SendGrid:**
-- **Reliability:** 99% deliverability rate
-- **Templates:** Drag-and-drop email builder
-- **Analytics:** Open rates, click rates, bounces
-- **Free Tier:** 100 emails/day free
-
-**Alternatives Considered:**
-- **AWS SES:** Cheaper ($0.10/1K emails), but less features
-- **Mailgun:** Similar to SendGrid, slightly more expensive
-
-**Configuration:**
-```typescript
-import sgMail from '@sendgrid/mail';
-
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
-await sgMail.send({
-  to: user.email,
-  from: 'noreply@mealplanner.com',
-  subject: 'Welcome!',
-  html: '<h1>Welcome to Meal Planner</h1>',
-});
-```
-
----
-
-### 15. ML: AWS Personalize
-
-**Purpose:** AI meal recommendations
-
-**Why AWS Personalize:**
-- **Managed:** No ML ops, automatic retraining
-- **Proven:** Same tech as Amazon.com recommendations
-- **Real-Time:** < 100ms inference
-- **Scalable:** Handles millions of users
-
-**Alternatives Considered:**
-- **Custom ML (Python):** Flexible, but requires ML expertise, ops overhead
-- **TensorFlow Recommenders:** Open-source, but manual deployment
-- **Collaborative Filtering (custom):** Simple, but less accurate
-
-**Decision:** AWS Personalize for MVP, migrate to custom if needed for advanced features.
-
----
-
-## NPM Dependencies
-
-**Production:**
-```json
-{
-  "dependencies": {
-    "@prisma/client": "^5.7.0",
-    "@sentry/node": "^7.80.0",
-    "bcryptjs": "^2.4.3",
-    "bull": "^4.11.5",
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "express-rate-limit": "^7.1.5",
-    "helmet": "^7.1.0",
-    "ioredis": "^5.3.2",
-    "jsonwebtoken": "^9.0.2",
-    "winston": "^3.11.0",
-    "zod": "^3.22.4",
-    "@sendgrid/mail": "^8.1.0",
-    "aws-sdk": "^2.1495.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.10.0",
-    "@types/express": "^4.17.21",
-    "@types/jest": "^29.5.10",
-    "jest": "^29.7.0",
-    "supertest": "^6.3.3",
-    "ts-jest": "^29.1.1",
-    "typescript": "^5.3.2",
-    "prisma": "^5.7.0"
-  }
+func init() {
+    prometheus.MustRegister(httpRequestsTotal)
 }
+
+// Metrics endpoint
+router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 ```
+
+---
+
+## Go Dependencies
+
+**Core Dependencies:**
+```go
+require (
+    github.com/gin-gonic/gin v1.9.1              // Web framework
+    gorm.io/gorm v1.25.5                          // ORM
+    gorm.io/driver/postgres v1.5.4                // PostgreSQL driver
+    github.com/golang-jwt/jwt/v5 v5.2.0           // JWT authentication
+    golang.org/x/crypto v0.17.0                   // Bcrypt, crypto
+    github.com/joho/godotenv v1.5.1               // Environment variables
+    github.com/gin-contrib/cors v1.4.0            // CORS middleware
+)
+```
+
+**Development Dependencies:**
+```go
+require (
+    github.com/cosmtrek/air v1.49.0               // Hot reload
+    github.com/stretchr/testify v1.8.4            // Testing assertions
+)
+```
+
+---
+
+## Comparison: Node.js vs Golang
+
+| Aspect | Node.js + Express | Golang + Gin |
+|--------|------------------|--------------|
+| **Performance** | Moderate (event loop) | High (compiled, goroutines) |
+| **Memory Usage** | ~50-100MB | ~15-30MB |
+| **Concurrency** | Event loop (single-threaded) | Goroutines (multi-threaded) |
+| **Type Safety** | TypeScript (compile-time) | Go (compile + runtime) |
+| **Deployment** | Node runtime + dependencies | Single binary |
+| **Build Time** | 5-10 seconds | < 1 second |
+| **Learning Curve** | Low (JavaScript familiar) | Moderate |
+| **Ecosystem** | 2M+ npm packages | Smaller but high-quality |
+| **Production Usage** | Very common | Very common |
+| **Startup Time** | ~500ms | < 100ms |
+
+---
+
+## Migration Rationale
+
+### Why We Migrated from Node.js to Golang
+
+1. **Performance:** Golang offers 10-40x better performance for CPU-intensive operations
+2. **Deployment Simplicity:** Single binary vs Node runtime + node_modules
+3. **Resource Efficiency:** Lower memory footprint means lower hosting costs
+4. **Concurrency:** Goroutines provide better concurrency than event loop
+5. **Type Safety:** Go's static typing catches more errors at compile time
+6. **Build Speed:** Sub-second builds vs 5-10 second TypeScript compilation
+7. **Production Readiness:** Faster to production with less complexity
+
+### What We Kept
+
+- **PostgreSQL:** Database choice unchanged (GORM works great with Postgres)
+- **JWT Authentication:** Same authentication approach
+- **REST API Design:** API endpoints and structure unchanged
+- **Docker Deployment:** Same containerization strategy
+- **AWS Infrastructure:** Cloud provider choice unchanged
+
+### Migration Results
+
+- **Development Speed:** Faster iteration with hot reload and fast builds
+- **Code Quality:** Strong typing reduces bugs
+- **Deployment:** Simpler with single binary
+- **Resource Usage:** Lower hosting costs
+- **Performance:** Better response times
 
 ---
 
@@ -530,28 +608,24 @@ await sgMail.send({
 
 | Category | Technology | Reason |
 |----------|-----------|--------|
-| Runtime | Node.js 20 | JavaScript consistency, async I/O |
-| Framework | Express.js | Battle-tested, flexible |
-| Database | PostgreSQL 15 | ACID + JSON support |
-| Cache | Redis 7 | Fast, versatile |
-| Cloud | AWS | Comprehensive services |
-| Storage | S3 + CloudFront | Scalable, durable |
-| ORM | Prisma | Type-safe, great DX |
-| Auth | JWT | Stateless, scalable |
-| Validation | Zod | TypeScript-first |
-| Testing | Jest + Supertest | Comprehensive testing |
-| Deployment | Docker + ECS | Containerized, auto-scaling |
-| CI/CD | GitHub Actions | Integrated, free |
-| Monitoring | CloudWatch + Sentry | Observability |
-| Email | SendGrid | Reliable delivery |
-| ML | AWS Personalize | Managed ML |
+| **Language** | Go 1.21+ | Performance, concurrency, simple deployment |
+| **Framework** | Gin | Fastest Go framework, production-ready |
+| **Database** | PostgreSQL 15 | ACID + JSON support |
+| **ORM** | GORM | Feature-rich, intuitive API |
+| **Auth** | JWT (golang-jwt) | Stateless, scalable |
+| **Password** | Bcrypt | Industry standard |
+| **Testing** | Go testing | Built-in, fast |
+| **Deployment** | Docker | Portable, consistent |
+| **CI/CD** | GitHub Actions | Integrated, free |
+| **Cloud** | AWS | Comprehensive services |
+| **Monitoring** | Prometheus + Grafana | Open source, powerful |
 
-**Total Monthly Cost (Year 1):** ~$125/month infrastructure + $0 for most SaaS (free tiers)
+**Total Monthly Cost (Year 1):** ~$90-110/month infrastructure
 
 ---
 
-**Document Version:** 1.0
-**Last Updated:** 2025-10-14
-**Status:** Approved
+**Document Version:** 2.0
+**Last Updated:** 2025-10-17
+**Status:** Updated for Golang Implementation
 
-This tech stack provides a solid foundation for rapid development, scalability, and maintainability.
+This tech stack provides superior performance, simpler deployment, and excellent developer experience compared to the original Node.js plan.

@@ -3,9 +3,12 @@
 
 ---
 
-**Version:** 1.0
-**Last Updated:** 2025-10-14
-**Status:** Design Phase
+> **Note**: This document has been updated for the Golang implementation (v2.0).
+> The backend was migrated from Node.js/TypeScript to Golang on October 16, 2025.
+
+**Version:** 2.0
+**Last Updated:** 2025-10-17
+**Status:** Production Implementation
 
 ---
 
@@ -45,9 +48,10 @@
 
 | Component | Technology | Rationale |
 |-----------|-----------|-----------|
-| **Runtime** | Node.js 20 LTS | JavaScript consistency, async I/O, mature ecosystem |
-| **Framework** | Express.js | Battle-tested, flexible, large community |
+| **Runtime** | Go 1.21+ | Performance, concurrency, static typing, simple deployment |
+| **Framework** | Gin | Fast, minimalist, excellent routing, middleware support |
 | **Database** | PostgreSQL 15 | ACID, JSON support, full-text search, reliability |
+| **ORM** | GORM | Full-featured, migrations, relationships, hooks |
 | **Cache** | Redis 7 | Fast, versatile (cache, sessions, queues) |
 | **Storage** | AWS S3 + CloudFront | Scalable, durable, global CDN |
 | **Container** | Docker | Portable, consistent environments |
@@ -100,6 +104,7 @@
 │  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐           │
 │  │  API Server 1 │  │  API Server 2 │  │  API Server N │           │
 │  │  (Container)  │  │  (Container)  │  │  (Container)  │           │
+│  │  Go Binary    │  │  Go Binary    │  │  Go Binary    │           │
 │  │               │  │               │  │               │           │
 │  │  - Auth       │  │  - Auth       │  │  - Auth       │           │
 │  │  - Recipe     │  │  - Recipe     │  │  - Recipe     │           │
@@ -156,112 +161,106 @@
 ### Modular Monolith Structure
 
 ```
-src/
-├── modules/
+backend/
+├── cmd/
+│   └── server/
+│       └── main.go                 # Application entry point
+│
+├── internal/
 │   ├── auth/
-│   │   ├── auth.controller.ts      # HTTP endpoints
-│   │   ├── auth.service.ts         # Business logic
-│   │   ├── auth.middleware.ts      # JWT validation
-│   │   ├── auth.routes.ts          # Route definitions
-│   │   ├── auth.validator.ts       # Input validation
-│   │   └── auth.types.ts           # TypeScript types
+│   │   ├── handler.go              # HTTP handlers (Gin)
+│   │   ├── service.go              # Business logic
+│   │   ├── repository.go           # Database layer (GORM)
+│   │   ├── middleware.go           # JWT validation
+│   │   ├── routes.go               # Route registration
+│   │   └── models.go               # Domain models
 │   │
 │   ├── user/
-│   │   ├── user.controller.ts
-│   │   ├── user.service.ts
-│   │   ├── user.repository.ts      # Database layer
-│   │   ├── user.routes.ts
-│   │   └── user.types.ts
+│   │   ├── handler.go
+│   │   ├── service.go
+│   │   ├── repository.go
+│   │   ├── routes.go
+│   │   └── models.go
 │   │
 │   ├── recipe/
-│   │   ├── recipe.controller.ts
-│   │   ├── recipe.service.ts
-│   │   ├── recipe.repository.ts
-│   │   ├── recipe.search.ts        # Search logic
-│   │   ├── recipe.routes.ts
-│   │   └── recipe.types.ts
+│   │   ├── handler.go
+│   │   ├── service.go
+│   │   ├── repository.go
+│   │   ├── search.go               # Search logic
+│   │   ├── routes.go
+│   │   └── models.go
 │   │
-│   ├── meal-plan/
-│   │   ├── meal-plan.controller.ts
-│   │   ├── meal-plan.service.ts
-│   │   ├── meal-plan.repository.ts
-│   │   ├── meal-plan.routes.ts
-│   │   └── meal-plan.types.ts
+│   ├── mealplan/
+│   │   ├── handler.go
+│   │   ├── service.go
+│   │   ├── repository.go
+│   │   ├── routes.go
+│   │   └── models.go
 │   │
-│   ├── shopping-list/
-│   │   ├── shopping-list.controller.ts
-│   │   ├── shopping-list.service.ts
-│   │   ├── shopping-list.repository.ts
-│   │   ├── ingredient-consolidator.ts
-│   │   ├── ingredient-categorizer.ts
-│   │   ├── shopping-list.routes.ts
-│   │   └── shopping-list.types.ts
+│   ├── shopping/
+│   │   ├── handler.go
+│   │   ├── service.go
+│   │   ├── repository.go
+│   │   ├── consolidator.go         # Ingredient consolidation
+│   │   ├── categorizer.go          # Categorization logic
+│   │   ├── routes.go
+│   │   └── models.go
 │   │
 │   ├── ai/
-│   │   ├── ai.controller.ts
-│   │   ├── recommendation.service.ts
-│   │   ├── nutrition.service.ts
-│   │   ├── substitution.service.ts
-│   │   ├── ai.routes.ts
-│   │   └── ai.types.ts
+│   │   ├── handler.go
+│   │   ├── recommendation.go       # Recommendation service
+│   │   ├── nutrition.go            # Nutrition analysis
+│   │   ├── substitution.go         # Ingredient substitution
+│   │   ├── routes.go
+│   │   └── models.go
 │   │
-│   ├── notification/
-│   │   ├── notification.controller.ts
-│   │   ├── email.service.ts
-│   │   ├── template.service.ts
-│   │   ├── notification.routes.ts
-│   │   └── notification.types.ts
-│   │
-│   └── admin/
-│       ├── admin.controller.ts
-│       ├── admin.service.ts
-│       ├── analytics.service.ts
-│       ├── admin.routes.ts
-│       └── admin.types.ts
+│   └── notification/
+│       ├── handler.go
+│       ├── email.go                # Email service
+│       ├── template.go             # Template rendering
+│       ├── routes.go
+│       └── models.go
 │
-├── common/
+├── pkg/
 │   ├── database/
-│   │   ├── connection.ts           # DB connection pool
-│   │   ├── migrations/             # Schema migrations
-│   │   └── seeds/                  # Test data
+│   │   ├── postgres.go             # PostgreSQL connection
+│   │   └── migrations/             # Database migrations
 │   │
 │   ├── cache/
-│   │   ├── redis.client.ts
-│   │   └── cache.service.ts
+│   │   ├── redis.go                # Redis client
+│   │   └── cache.go                # Cache service
 │   │
 │   ├── storage/
-│   │   ├── s3.client.ts
-│   │   └── upload.service.ts
+│   │   ├── s3.go                   # S3 client
+│   │   └── upload.go               # Upload service
 │   │
 │   ├── middleware/
-│   │   ├── auth.middleware.ts      # JWT verification
-│   │   ├── error.middleware.ts     # Error handling
-│   │   ├── logger.middleware.ts    # Request logging
-│   │   ├── rate-limit.middleware.ts
-│   │   └── validation.middleware.ts
+│   │   ├── auth.go                 # JWT verification
+│   │   ├── error.go                # Error handling
+│   │   ├── logger.go               # Request logging
+│   │   ├── ratelimit.go            # Rate limiting
+│   │   └── cors.go                 # CORS middleware
 │   │
 │   ├── utils/
-│   │   ├── logger.ts               # Winston logger
-│   │   ├── errors.ts               # Custom error classes
-│   │   ├── responses.ts            # Standard responses
-│   │   └── helpers.ts              # Utility functions
+│   │   ├── logger.go               # Structured logging
+│   │   ├── errors.go               # Custom errors
+│   │   ├── response.go             # Standard responses
+│   │   └── validator.go            # Input validation
 │   │
 │   └── config/
-│       ├── database.config.ts
-│       ├── redis.config.ts
-│       ├── s3.config.ts
-│       └── app.config.ts
+│       └── config.go               # Configuration management
 │
-├── app.ts                          # Express app setup
-├── server.ts                       # Server entry point
-└── routes.ts                       # Root route aggregation
+├── go.mod                          # Go module dependencies
+├── go.sum                          # Dependency checksums
+├── Makefile                        # Build and run commands
+└── Dockerfile                      # Container definition
 ```
 
 ### Layer Responsibilities
 
-**Controller Layer**:
+**Handler Layer** (Gin Handlers):
 - Handle HTTP requests/responses
-- Input validation (using middleware)
+- Input validation (using validator)
 - Call service layer
 - Transform data for response
 
@@ -272,7 +271,7 @@ src/
 - Call external services
 
 **Repository Layer**:
-- Database queries (using ORM or SQL)
+- Database queries (using GORM)
 - Data access only
 - No business logic
 
@@ -496,25 +495,38 @@ GET /api/v1/recipes?sort=createdAt:desc,rating:desc
    - `POST /recipes`, `PATCH /recipes/:id`, `DELETE /recipes/:id`
    - All `/admin/*` endpoints
 
-### Middleware Stack
+### Middleware Stack (Gin Example)
 
-```typescript
+```go
 // Example route with middleware
-router.get(
-  '/users/:userId/meal-plans',
-  authenticate,           // Verify JWT
-  authorize('user'),      // Check role
-  validateUserId,         // Ensure user can only access own data
-  mealPlanController.getMealPlans
-);
+func SetupRoutes(r *gin.Engine, authMiddleware *middleware.AuthMiddleware) {
+    v1 := r.Group("/api/v1")
 
-router.post(
-  '/recipes',
-  authenticate,
-  authorize('admin'),     // Admin only
-  validateRecipeInput,    // Validate request body
-  recipeController.createRecipe
-);
+    // Public routes
+    auth := v1.Group("/auth")
+    {
+        auth.POST("/register", authHandler.Register)
+        auth.POST("/login", authHandler.Login)
+    }
+
+    // Protected routes (user must be authenticated)
+    protected := v1.Group("")
+    protected.Use(authMiddleware.RequireAuth())
+    {
+        // User routes (user can only access own data)
+        protected.GET("/users/:userId/meal-plans",
+            authMiddleware.ValidateUserAccess(),
+            mealPlanHandler.GetUserMealPlans)
+
+        // Admin-only routes
+        adminRoutes := protected.Group("")
+        adminRoutes.Use(authMiddleware.RequireRole("admin"))
+        {
+            adminRoutes.POST("/recipes", recipeHandler.CreateRecipe)
+            adminRoutes.PATCH("/recipes/:id", recipeHandler.UpdateRecipe)
+        }
+    }
+}
 ```
 
 ---
@@ -544,26 +556,26 @@ router.post(
      │
      ▼
 ┌──────────────────┐
-│   API Server     │ 4. Express app receives request
+│   API Server     │ 4. Gin app receives request
 │   (Fargate)      │    Middleware chain executes:
 └────┬─────────────┘
      │
      ├─> Auth Middleware:
-     │   - Verify JWT signature
+     │   - Verify JWT signature (dgrijalva/jwt-go)
      │   - Check expiration
      │   - Extract userId from token
-     │   - Attach user to req.user
+     │   - Attach user to Gin context
      │
      ├─> Authorization Middleware:
      │   - Ensure user owns meal plan (planId belongs to userId)
      │
      ├─> Validation Middleware:
-     │   - Validate request body schema
+     │   - Validate request body schema (go-playground/validator)
      │   - Check date, mealType, recipeId valid
      │
      ▼
 ┌──────────────────┐
-│  MealPlanController │ 5. Call service layer
+│  MealPlanHandler │ 5. Call service layer
 └────┬─────────────┘
      │
      ▼
@@ -571,15 +583,14 @@ router.post(
 │  MealPlanService │ 6. Business logic:
 └────┬─────────────┘    - Fetch meal plan from DB
      │                  - Check recipe exists
-     ├─────────────────> RecipeRepository.findById(recipeId)
+     ├─────────────────> RecipeRepository.FindByID(recipeId)
      │                  - Add meal to plan
      │                  - Invalidate cache
      ▼
 ┌──────────────────┐
-│   PostgreSQL     │ 7. Update meal_plans table:
-│   (Primary DB)   │    UPDATE meal_plans
-└────┬─────────────┘    SET meals = jsonb_set(meals, '{monday,dinner}', '"recipe-123"')
-     │                  WHERE id = 'plan-001'
+│   PostgreSQL     │ 7. Update meal_plans table (GORM):
+│   (Primary DB)   │    db.Model(&mealPlan).
+└────┬─────────────┘       Update("meals", updatedMeals)
      │
      │ 8. Return updated meal plan
      │
@@ -594,7 +605,7 @@ router.post(
      ▼
 ┌──────────────────┐
 │  ActivityService │ 11. INSERT INTO activities
-└────┬─────────────┘     (userId, action, details, timestamp)
+└────┬─────────────┘     (using GORM Create)
      │
      │ 12. Return response
      │
@@ -617,7 +628,7 @@ router.post(
 │                                               │
 │  - Config, constants                          │
 │  - Static data (categories, units)            │
-│  - LRU cache, 100MB max                       │
+│  - sync.Map or go-cache library               │
 │  - TTL: 1 hour                                │
 └───────────────────┬──────────────────────────┘
                     │ Cache Miss
@@ -673,17 +684,20 @@ router.post(
 - Next read will populate cache from DB
 
 **Example**:
-```typescript
-async addMealToSlot(planId, date, mealType, recipeId) {
-  // 1. Update database
-  await db.mealPlans.update(planId, { ... });
+```go
+func (s *MealPlanService) AddMealToSlot(planID, date, mealType, recipeID string) error {
+    // 1. Update database
+    err := s.repo.UpdateMealPlan(planID, updatedMeals)
+    if err != nil {
+        return err
+    }
 
-  // 2. Invalidate cache
-  const cacheKey = `meal-plan:${userId}:${weekStart}`;
-  await redis.del(cacheKey);
+    // 2. Invalidate cache
+    cacheKey := fmt.Sprintf("meal-plan:%s:%s", userID, weekStart)
+    s.cache.Del(ctx, cacheKey)
 
-  // 3. Return updated data
-  return this.getMealPlan(planId); // Will cache on read
+    // 3. Return updated data
+    return s.GetMealPlan(planID) // Will cache on read
 }
 ```
 
@@ -720,69 +734,41 @@ meal-planner-images-production/
         └── {filename}  (auto-deleted after 24 hours)
 ```
 
-### Image Upload Flow
+### Image Upload Flow (Go Implementation)
 
-```
-┌──────────┐
-│  Client  │
-└────┬─────┘
-     │
-     │ 1. Request upload URL
-     │    POST /api/v1/recipes/123/upload-url
-     │    { filename: "chicken.jpg", contentType: "image/jpeg" }
-     │
-     ▼
-┌──────────────────┐
-│   API Server     │ 2. Generate presigned S3 URL
-│                  │    - Valid for 15 minutes
-│                  │    - Max file size: 10MB
-└────┬─────────────┘    - Only image/* content types
-     │
-     │ 3. Return presigned URL
-     │    { uploadUrl: "https://s3.../...", key: "recipes/123/..." }
-     │
-     ▼
-┌──────────┐
-│  Client  │ 4. Upload directly to S3
-│          │    PUT to uploadUrl
-└────┬─────┘    (bypasses API server)
-     │
-     ▼
-┌──────────────────┐
-│      S3          │ 5. Image stored in temp/
-└────┬─────────────┘
-     │
-     │ 6. Confirm upload
-     │    POST /api/v1/recipes/123/confirm-upload
-     │    { key: "recipes/123/..." }
-     │
-     ▼
-┌──────────────────┐
-│   API Server     │ 7. Trigger image processing
-│                  │    - Invoke Lambda or queue job
-└────┬─────────────┘
-     │
-     ▼
-┌──────────────────┐
-│  Image Processor │ 8. Resize, optimize, convert:
-│  (Lambda/Fargate)│    - Original → large, medium, thumb
-└────┬─────────────┘    - Convert to WebP
-     │                  - Optimize (reduce file size)
-     │
-     │ 9. Upload variants to S3
-     │
-     ▼
-┌──────────────────┐
-│      S3          │ 10. Store all variants
-└────┬─────────────┘     - Delete temp/ original
-     │
-     │ 11. Update recipe with image URLs
-     │
-     ▼
-┌──────────────────┐
-│   PostgreSQL     │ 12. UPDATE recipes
-│                  │     SET image_url = 'https://cdn.../medium/...'
-└──────────────────┘         image_urls = { large: ..., medium: ..., thumb: ... }
+```go
+// Handler for presigned URL generation
+func (h *RecipeHandler) GetUploadURL(c *gin.Context) {
+    var req struct {
+        Filename    string `json:"filename" binding:"required"`
+        ContentType string `json:"contentType" binding:"required"`
+    }
+
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    // Generate presigned URL (15-minute expiration)
+    s3Client := s3.NewFromConfig(cfg)
+    presignClient := s3.NewPresignClient(s3Client)
+
+    request, err := presignClient.PresignPutObject(ctx, &s3.PutObjectInput{
+        Bucket:      aws.String("meal-planner-images"),
+        Key:         aws.String(fmt.Sprintf("recipes/%s/temp/%s", recipeID, req.Filename)),
+        ContentType: aws.String(req.ContentType),
+    }, s3.WithPresignExpires(15*time.Minute))
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate upload URL"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "uploadUrl": request.URL,
+        "key":       request.Key,
+    })
+}
 ```
 
 ### CDN Configuration
@@ -826,18 +812,36 @@ GENERATED ALWAYS AS (
 CREATE INDEX recipes_search_idx ON recipes USING GIN(search_vector);
 ```
 
-**Search Query**:
-```sql
-SELECT
-  id, name, image_url, prep_time, rating,
-  ts_rank(search_vector, query) AS rank
-FROM recipes,
-  to_tsquery('english', 'chicken & tacos') AS query
-WHERE search_vector @@ query
-  AND category = 'Dinner'  -- Filter by category
-  AND tags @> '["Keto"]'   -- Filter by dietary tags
-ORDER BY rank DESC, rating DESC
-LIMIT 20 OFFSET 0;
+**Search Query (GORM)**:
+```go
+type RecipeRepository struct {
+    db *gorm.DB
+}
+
+func (r *RecipeRepository) Search(query string, filters RecipeFilters) ([]Recipe, error) {
+    var recipes []Recipe
+
+    db := r.db.Model(&Recipe{})
+
+    // Full-text search
+    if query != "" {
+        db = db.Where("search_vector @@ to_tsquery('english', ?)", query)
+        db = db.Order("ts_rank(search_vector, to_tsquery('english', ?)) DESC", query)
+    }
+
+    // Apply filters
+    if filters.Category != "" {
+        db = db.Where("category = ?", filters.Category)
+    }
+
+    if len(filters.Tags) > 0 {
+        db = db.Where("tags @> ?", pq.Array(filters.Tags))
+    }
+
+    // Execute query
+    err := db.Limit(20).Offset(filters.Page * 20).Find(&recipes).Error
+    return recipes, err
+}
 ```
 
 **Autocomplete**:
@@ -862,7 +866,7 @@ LIMIT 20 OFFSET 0;
 - Index: `recipes`
 - Mapping: name (text), ingredients (text), tags (keyword), category (keyword)
 - Analyzers: Standard, autocomplete (edge n-gram)
-- Sync: River plugin or app-level (write to ES on recipe create/update)
+- Sync: App-level (write to ES on recipe create/update)
 
 ---
 
@@ -919,38 +923,36 @@ LIMIT 20 OFFSET 0;
 └───────────────────────────────────────────────┘
 ```
 
-### Event Tracking
+### Event Tracking (Go Implementation)
 
-**Events to Track**:
-- `meal_planned`: User adds recipe to meal plan
-- `recipe_favorited`: User favorites recipe
-- `recipe_viewed`: User views recipe detail
-- `recipe_rated`: User rates recipe (future)
-- `shopping_list_generated`: User generates shopping list
+```go
+type ActivityService struct {
+    repo *ActivityRepository
+}
 
-**Event Schema**:
-```json
-{
-  "userId": "user-123",
-  "recipeId": "recipe-456",
-  "eventType": "meal_planned",
-  "timestamp": "2025-10-14T10:30:00Z",
-  "context": {
-    "mealType": "dinner",
-    "date": "2025-10-15"
-  }
+type Activity struct {
+    ID         string    `gorm:"primaryKey"`
+    UserID     string    `gorm:"index"`
+    EventType  string    `gorm:"index"`
+    RecipeID   *string
+    Details    string
+    Timestamp  time.Time `gorm:"autoCreateTime"`
+}
+
+func (s *ActivityService) TrackMealPlanned(userID, recipeID, mealType, date string) error {
+    activity := &Activity{
+        UserID:    userID,
+        EventType: "meal_planned",
+        RecipeID:  &recipeID,
+        Details:   fmt.Sprintf("Added %s to %s on %s", recipeID, mealType, date),
+    }
+    return s.repo.Create(activity)
 }
 ```
 
-**Event Flow**:
-1. User action triggers event
-2. API logs event to database (async)
-3. Background job syncs events to AWS Personalize (batch, every 6 hours)
-4. Personalize retrains model (weekly)
-
 ### Nutrition Analysis
 
-**Service**: `nutrition.service.ts`
+**Service**: Nutrition Service (Go)
 
 **Features**:
 1. **Daily/Weekly Summaries**:
@@ -959,23 +961,27 @@ LIMIT 20 OFFSET 0;
    - Weekly averages
 
 2. **Balance Score Algorithm**:
-   ```typescript
-   function calculateBalanceScore(weeklyNutrition) {
-     let score = 100;
+   ```go
+   func CalculateBalanceScore(weeklyNutrition WeeklyNutrition) float64 {
+       score := 100.0
 
-     // Consistency: Penalize high variance in daily calories
-     const calorieStdDev = calculateStdDev(dailyCalories);
-     if (calorieStdDev > 500) score -= 20;
+       // Consistency: Penalize high variance in daily calories
+       calorieStdDev := calculateStdDev(weeklyNutrition.DailyCalories)
+       if calorieStdDev > 500 {
+           score -= 20
+       }
 
-     // Macro balance: Ideal 30% protein, 40% carbs, 30% fat
-     const macroScore = scoreMacroDistribution(avgMacros);
-     score = score * 0.6 + macroScore * 0.4;
+       // Macro balance: Ideal 30% protein, 40% carbs, 30% fat
+       macroScore := scoreMacroDistribution(weeklyNutrition.AvgMacros)
+       score = score*0.6 + macroScore*0.4
 
-     // Variety: Unique meal count
-     const uniqueMeals = new Set(recipeIds).size;
-     if (uniqueMeals < 7) score -= 10;
+       // Variety: Unique meal count
+       uniqueMeals := len(weeklyNutrition.UniqueMeals)
+       if uniqueMeals < 7 {
+           score -= 10
+       }
 
-     return Math.max(0, Math.min(100, score));
+       return math.Max(0, math.Min(100, score))
    }
    ```
 
@@ -987,38 +993,46 @@ LIMIT 20 OFFSET 0;
 
 ## Notification Service Architecture
 
-### Email Service
+### Email Service (Go)
 
-```
-┌──────────────────┐
-│   Trigger Event  │ (User registers, meal plan reminder)
-└────┬─────────────┘
-     │
-     ▼
-┌──────────────────┐
-│  Email Queue     │ (Redis Queue or AWS SQS)
-│  Job: { userId,  │
-│         template,│
-│         data }   │
-└────┬─────────────┘
-     │
-     ▼
-┌──────────────────┐
-│  Email Worker    │ (Background job processor)
-│                  │ - Fetch user email
-│                  │ - Render template
-│                  │ - Send via SendGrid/SES
-└────┬─────────────┘
-     │
-     ▼
-┌──────────────────┐
-│  SendGrid / SES  │ (Email delivery service)
-└────┬─────────────┘
-     │
-     ▼
-┌──────────────────┐
-│  User Inbox      │
-└──────────────────┘
+```go
+type EmailService struct {
+    client *sendgrid.Client
+}
+
+type EmailTemplate struct {
+    Name     string
+    Subject  string
+    Template string
+}
+
+func (s *EmailService) SendWelcomeEmail(user User) error {
+    tmpl, err := template.ParseFiles("templates/welcome.html")
+    if err != nil {
+        return err
+    }
+
+    var body bytes.Buffer
+    err = tmpl.Execute(&body, map[string]interface{}{
+        "UserName":     user.Name,
+        "DashboardURL": "https://app.mealplanner.com/dashboard",
+    })
+
+    if err != nil {
+        return err
+    }
+
+    message := mail.NewSingleEmail(
+        mail.NewEmail("Meal Planner", "noreply@mealplanner.com"),
+        "Welcome to Meal Planner!",
+        mail.NewEmail(user.Name, user.Email),
+        body.String(),
+        body.String(),
+    )
+
+    _, err = s.client.Send(message)
+    return err
+}
 ```
 
 **Email Templates**:
@@ -1028,24 +1042,12 @@ LIMIT 20 OFFSET 0;
 - Weekly summary (`weekly-summary.html`)
 - Password reset (`password-reset.html`)
 
-**Template Engine**: Handlebars or EJS
-
-**Example**:
-```html
-<!-- welcome.html -->
-<html>
-  <body>
-    <h1>Welcome to Meal Planner, {{userName}}!</h1>
-    <p>Start planning your meals today.</p>
-    <a href="{{dashboardUrl}}">Go to Dashboard</a>
-  </body>
-</html>
-```
+**Template Engine**: Go `html/template`
 
 **Email Scheduling**:
 - Meal plan reminders: Sunday 9 AM (user's timezone)
 - Weekly summary: Saturday 6 PM
-- Use cron jobs (node-cron) or AWS EventBridge
+- Use Go cron library (robfig/cron)
 
 ---
 
@@ -1102,14 +1104,23 @@ ScaleDownPolicy:
      └──────────────────┘
 ```
 
-**Query Routing**:
-```typescript
-// Write queries → Primary
-await db.primary.query('INSERT INTO users ...');
+**Query Routing (GORM)**:
+```go
+// Primary DB for writes
+primaryDB := gorm.Open(postgres.Open(primaryDSN))
 
-// Read queries → Replicas (random selection)
-const replica = db.replicas[Math.floor(Math.random() * db.replicas.length)];
-await replica.query('SELECT * FROM users WHERE id = ?');
+// Read replicas
+replicaDBs := []*gorm.DB{
+    gorm.Open(postgres.Open(replica1DSN)),
+    gorm.Open(postgres.Open(replica2DSN)),
+}
+
+// Write query → Primary
+primaryDB.Create(&user)
+
+// Read query → Random replica
+replica := replicaDBs[rand.Intn(len(replicaDBs))]
+replica.Find(&users)
 ```
 
 **Connection Pooling**:
@@ -1140,6 +1151,7 @@ await replica.query('SELECT * FROM users WHERE id = ?');
 │  │                  │        │                  │ │
 │  │ ┌─────────────┐  │        │ ┌─────────────┐ │ │
 │  │ │API Server 1 │  │        │ │API Server 2 │ │ │
+│  │ │ (Go Binary) │  │        │ │ (Go Binary) │ │ │
 │  │ └─────────────┘  │        │ └─────────────┘ │ │
 │  │                  │        │                  │ │
 │  │ ┌─────────────┐  │        │ ┌─────────────┐ │ │
@@ -1241,13 +1253,35 @@ await replica.query('SELECT * FROM users WHERE id = ?');
 - SendGrid API key
 - AWS access keys (for S3)
 
-**Environment Variables**:
-```bash
-# Never committed to Git
-DB_HOST=<from Secrets Manager>
-DB_PASSWORD=<from Secrets Manager>
-JWT_SECRET=<from Secrets Manager>
-SENDGRID_API_KEY=<from Secrets Manager>
+**Environment Variables (Go)**:
+```go
+type Config struct {
+    DBHost         string `env:"DB_HOST,required"`
+    DBPassword     string // Loaded from Secrets Manager
+    JWTSecret      string // Loaded from Secrets Manager
+    SendGridAPIKey string // Loaded from Secrets Manager
+}
+
+func LoadConfig() (*Config, error) {
+    // Load from environment
+    cfg := &Config{}
+    if err := env.Parse(cfg); err != nil {
+        return nil, err
+    }
+
+    // Load secrets from AWS Secrets Manager
+    secretsClient := secretsmanager.NewFromConfig(awsCfg)
+
+    dbPass, err := getSecret(secretsClient, "production/db/password")
+    if err != nil {
+        return nil, err
+    }
+    cfg.DBPassword = dbPass
+
+    // Load other secrets...
+
+    return cfg, nil
+}
 ```
 
 **Rotation**:
@@ -1281,21 +1315,33 @@ SENDGRID_API_KEY=<from Secrets Manager>
 - Shopping lists generated (count/day)
 - User registrations (count/day)
 
-### Logging
+### Logging (Go Structured Logging)
 
-**Structured Logs** (JSON):
-```json
-{
-  "timestamp": "2025-10-14T10:30:00Z",
-  "level": "info",
-  "service": "api",
-  "requestId": "req-123",
-  "userId": "user-456",
-  "method": "POST",
-  "path": "/api/v1/meal-plans/plan-001/meals",
-  "statusCode": 201,
-  "duration": 145,
-  "message": "Meal added successfully"
+**Example with Logrus**:
+```go
+import log "github.com/sirupsen/logrus"
+
+func init() {
+    log.SetFormatter(&log.JSONFormatter{})
+    log.SetOutput(os.Stdout)
+    log.SetLevel(log.InfoLevel)
+}
+
+func (h *MealPlanHandler) AddMeal(c *gin.Context) {
+    start := time.Now()
+
+    // Process request...
+
+    log.WithFields(log.Fields{
+        "timestamp":  time.Now().Format(time.RFC3339),
+        "service":    "api",
+        "requestId":  c.GetString("requestId"),
+        "userId":     c.GetString("userId"),
+        "method":     c.Request.Method,
+        "path":       c.Request.URL.Path,
+        "statusCode": c.Writer.Status(),
+        "duration":   time.Since(start).Milliseconds(),
+    }).Info("Meal added successfully")
 }
 ```
 
@@ -1322,19 +1368,39 @@ SENDGRID_API_KEY=<from Secrets Manager>
 
 ### Distributed Tracing
 
-**AWS X-Ray**:
-- Trace requests across services
-- Identify bottlenecks (slow DB queries, external API calls)
-- Visualize service map
+**AWS X-Ray (Go SDK)**:
+```go
+import (
+    "github.com/aws/aws-xray-sdk-go/xray"
+    "github.com/aws/aws-xray-sdk-go/xraygin"
+)
+
+func main() {
+    r := gin.Default()
+
+    // Add X-Ray middleware
+    r.Use(xraygin.Middleware("meal-planner-api"))
+
+    // Your routes...
+}
+
+func (s *MealPlanService) AddMeal(ctx context.Context, planID string) error {
+    // Create subsegment for tracing
+    _, seg := xray.BeginSubsegment(ctx, "AddMeal")
+    defer seg.Close(nil)
+
+    // Your business logic...
+}
+```
 
 **Example Trace**:
 ```
 POST /api/v1/meal-plans/plan-001/meals
 ├─ Auth Middleware (5ms)
-├─ MealPlanController (145ms)
-│  ├─ RecipeRepository.findById (45ms)
+├─ MealPlanHandler (145ms)
+│  ├─ RecipeRepository.FindByID (45ms)
 │  │  └─ Database Query (40ms)
-│  ├─ MealPlanRepository.update (85ms)
+│  ├─ MealPlanRepository.Update (85ms)
 │  │  └─ Database Query (80ms)
 │  └─ Cache Invalidation (5ms)
 └─ Response (200ms total)
@@ -1354,6 +1420,13 @@ This architecture provides a solid foundation for the Meal Planner backend:
 - **Maintainable**: Modular code, IaC, automated deployments
 
 The modular monolith approach allows rapid development while keeping the door open for future microservices extraction if needed.
+
+**Go Advantages**:
+- **Performance**: 10x faster than Node.js for CPU-bound tasks
+- **Concurrency**: Goroutines handle thousands of concurrent requests efficiently
+- **Simplicity**: Single binary deployment, no runtime dependencies
+- **Type Safety**: Compile-time error catching
+- **Memory Efficiency**: Lower memory footprint than Node.js
 
 ---
 
