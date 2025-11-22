@@ -1,5 +1,5 @@
 # Development Dockerfile with Hot Reload
-FROM golang:1.21-alpine
+FROM golang:1.25-alpine
 
 # Install development tools
 RUN apk add --no-cache git ca-certificates tzdata
