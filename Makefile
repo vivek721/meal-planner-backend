@@ -1,6 +1,6 @@
-.PHONY: help install build run dev test test-coverage clean fmt lint vet \
-        docker-build docker-up docker-down docker-logs docker-shell docker-db-shell \
-        docker-clean docker-rebuild docker-dev-up docker-dev-down docker-dev-logs \
+.PHONY: help install build run dev test test-coverage test-race clean fmt lint vet \
+        ci-test security-scan docker-build docker-up docker-down docker-logs docker-shell \
+        docker-db-shell docker-clean docker-rebuild docker-dev-up docker-dev-down docker-dev-logs \
         db-create db-drop db-reset
 
 # Variables
@@ -10,6 +10,7 @@ GOFLAGS=-v
 DB_URL?=postgresql://postgres:postgres@localhost:5432/meal_planner?sslmode=disable
 DOCKER_COMPOSE=docker-compose
 DOCKER_COMPOSE_DEV=docker-compose -f docker-compose.dev.yml
+COVERAGE_THRESHOLD=70.0
 
 help: ## Display this help screen
 	@grep -h -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -32,13 +33,34 @@ test: ## Run tests
 	$(GO) test ./... -v
 
 test-coverage: ## Run tests with coverage
-	$(GO) test ./... -v -coverprofile=coverage.out
+	$(GO) test ./... -v -coverprofile=coverage.out -covermode=atomic
 	$(GO) tool cover -html=coverage.out -o coverage.html
 	@echo "Coverage report generated: coverage.html"
+	@$(GO) tool cover -func=coverage.out | grep total | awk '{print "Total coverage: " $$3}'
+
+test-race: ## Run tests with race detector
+	$(GO) test ./... -v -race
+
+ci-test: ## Run tests for CI (with coverage threshold check)
+	$(GO) test ./... -v -race -coverprofile=coverage.out -covermode=atomic -timeout 5m
+	@echo "Checking coverage threshold..."
+	@COVERAGE=$$($(GO) tool cover -func=coverage.out | grep total | grep -Eo '[0-9]+\.[0-9]+'); \
+	echo "Total coverage: $$COVERAGE%"; \
+	if [ "$$(echo "$$COVERAGE < $(COVERAGE_THRESHOLD)" | bc -l)" -eq 1 ]; then \
+		echo "Coverage $$COVERAGE% is below minimum threshold of $(COVERAGE_THRESHOLD)%"; \
+		exit 1; \
+	else \
+		echo "Coverage $$COVERAGE% meets minimum threshold of $(COVERAGE_THRESHOLD)%"; \
+	fi
+
+security-scan: ## Run security scan with gosec
+	@command -v gosec >/dev/null 2>&1 || { echo "Installing gosec..."; go install github.com/securego/gosec/v2/cmd/gosec@latest; }
+	gosec -fmt=json -out=gosec-report.json ./...
+	@echo "Security scan complete. Report: gosec-report.json"
 
 clean: ## Clean build artifacts
 	rm -rf bin/
-	rm -f coverage.out coverage.html
+	rm -f coverage.out coverage.html gosec-report.json
 	$(GO) clean
 
 fmt: ## Format code

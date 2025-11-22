@@ -39,3 +39,11 @@ build-errors.log
 
 # Logs
 *.log
+
+# CI/CD artifacts
+coverage.txt
+gosec-report.json
+*.sarif
+
+# Backup files
+*.bak

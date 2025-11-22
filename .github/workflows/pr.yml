@@ -1,0 +1,238 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches: [ master, main, develop ]
+    types: [opened, synchronize, reopened]
+
+env:
+  GO_VERSION: '1.21'
+
+jobs:
+  pr-info:
+    name: PR Information
+    runs-on: ubuntu-latest
+    steps:
+      - name: PR Details
+        run: |
+          echo "PR #${{ github.event.pull_request.number }}"
+          echo "Title: ${{ github.event.pull_request.title }}"
+          echo "Author: ${{ github.event.pull_request.user.login }}"
+          echo "Base: ${{ github.event.pull_request.base.ref }}"
+          echo "Head: ${{ github.event.pull_request.head.ref }}"
+
+  changed-files:
+    name: Check Changed Files
+    runs-on: ubuntu-latest
+    outputs:
+      go: ${{ steps.filter.outputs.go }}
+      workflows: ${{ steps.filter.outputs.workflows }}
+      docker: ${{ steps.filter.outputs.docker }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            go:
+              - '**.go'
+              - 'go.mod'
+              - 'go.sum'
+            workflows:
+              - '.github/workflows/**'
+            docker:
+              - 'Dockerfile'
+              - 'Dockerfile.dev'
+              - 'docker-compose*.yml'
+
+  code-review-hints:
+    name: Code Review Hints
+    runs-on: ubuntu-latest
+    needs: changed-files
+    if: needs.changed-files.outputs.go == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Check for common issues
+        run: |
+          echo "Checking for common code issues..."
+
+          # Check for TODO comments
+          echo "TODOs found:"
+          grep -r "TODO\|FIXME\|XXX\|HACK" --include="*.go" . || echo "None"
+
+          # Check for fmt.Println (should use logger)
+          echo ""
+          echo "Direct fmt.Println usage (should use logger):"
+          grep -r "fmt.Println\|fmt.Printf" --include="*.go" . || echo "None"
+
+          # Check for panic (should handle errors properly)
+          echo ""
+          echo "Panic usage (consider proper error handling):"
+          grep -r "panic(" --include="*.go" . || echo "None"
+
+      - name: Check test files
+        run: |
+          echo "Test files changed:"
+          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD | grep "_test.go$" || echo "No test files changed"
+
+          echo ""
+          echo "Checking test coverage of changed files..."
+          # This is a reminder to add tests
+          CHANGED_GO_FILES=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD | grep "\.go$" | grep -v "_test.go$" || true)
+          if [ -n "$CHANGED_GO_FILES" ]; then
+            echo "Changed Go files:"
+            echo "$CHANGED_GO_FILES"
+            echo ""
+            echo "Please ensure tests are added/updated for these files."
+          fi
+
+  pr-size-check:
+    name: Check PR Size
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check PR size
+        run: |
+          ADDITIONS=$(git diff --numstat origin/${{ github.event.pull_request.base.ref }}...HEAD | awk '{sum+=$1} END {print sum}')
+          DELETIONS=$(git diff --numstat origin/${{ github.event.pull_request.base.ref }}...HEAD | awk '{sum+=$2} END {print sum}')
+          FILES_CHANGED=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD | wc -l)
+
+          echo "PR Statistics:"
+          echo "Files changed: $FILES_CHANGED"
+          echo "Lines added: $ADDITIONS"
+          echo "Lines deleted: $DELETIONS"
+          echo "Net change: $((ADDITIONS - DELETIONS))"
+
+          # Warn if PR is large
+          if [ $FILES_CHANGED -gt 20 ]; then
+            echo "::warning::Large PR detected ($FILES_CHANGED files). Consider breaking into smaller PRs."
+          fi
+
+          if [ $ADDITIONS -gt 500 ]; then
+            echo "::warning::Large PR detected ($ADDITIONS additions). Consider breaking into smaller PRs."
+          fi
+
+  commit-message-check:
+    name: Check Commit Messages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate commit messages
+        run: |
+          echo "Checking commit message format..."
+
+          # Get commit messages in PR
+          COMMITS=$(git log --format=%s origin/${{ github.event.pull_request.base.ref }}..HEAD)
+
+          echo "Commits in this PR:"
+          echo "$COMMITS"
+
+          # Check for conventional commit format (optional)
+          # Conventional format: type(scope): description
+          # Types: feat, fix, docs, style, refactor, test, chore
+          echo ""
+          echo "Conventional commit check (recommended but not enforced):"
+          echo "$COMMITS" | while read -r msg; do
+            if [[ $msg =~ ^(feat|fix|docs|style|refactor|test|chore)(\(.+\))?: ]]; then
+              echo "✓ $msg"
+            else
+              echo "ℹ $msg (not conventional format)"
+            fi
+          done
+
+  security-check:
+    name: Security Check
+    runs-on: ubuntu-latest
+    needs: changed-files
+    if: needs.changed-files.outputs.go == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run Gosec
+        uses: securego/gosec@master
+        with:
+          args: '-no-fail -fmt sarif -out gosec-results.sarif ./...'
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: gosec-results.sarif
+
+  label-pr:
+    name: Auto-label PR
+    runs-on: ubuntu-latest
+    needs: changed-files
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Label PR based on changed files
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = [];
+
+            if ('${{ needs.changed-files.outputs.go }}' === 'true') {
+              labels.push('go', 'backend');
+            }
+
+            if ('${{ needs.changed-files.outputs.workflows }}' === 'true') {
+              labels.push('ci/cd', 'github-actions');
+            }
+
+            if ('${{ needs.changed-files.outputs.docker }}' === 'true') {
+              labels.push('docker');
+            }
+
+            // Determine size label
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            const additions = files.reduce((sum, file) => sum + file.additions, 0);
+
+            if (additions < 10) {
+              labels.push('size/XS');
+            } else if (additions < 50) {
+              labels.push('size/S');
+            } else if (additions < 200) {
+              labels.push('size/M');
+            } else if (additions < 500) {
+              labels.push('size/L');
+            } else {
+              labels.push('size/XL');
+            }
+
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: labels
+              });
+            }

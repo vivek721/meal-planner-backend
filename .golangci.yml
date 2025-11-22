@@ -1,0 +1,250 @@
+run:
+  # Timeout for analysis
+  timeout: 5m
+
+  # Include test files
+  tests: true
+
+  # Modules download mode
+  modules-download-mode: readonly
+
+  # Allow multiple parallel golangci-lint instances
+  allow-parallel-runners: true
+
+  # Define the Go version to target
+  go: '1.21'
+
+linters:
+  enable:
+    # Enabled by default
+    - errcheck       # Check for unchecked errors
+    - gosimple       # Simplify code
+    - govet          # Vet examines Go source code
+    - ineffassign    # Detect ineffectual assignments
+    - staticcheck    # Static analysis
+    - unused         # Check for unused constants, variables, functions
+
+    # Additional recommended linters
+    - gofmt          # Check code formatting
+    - goimports      # Check import statements formatting
+    - misspell       # Check for misspelled words
+    - revive         # Fast, configurable, extensible linter
+    - gosec          # Security-focused linter
+    - bodyclose      # Check HTTP response body is closed
+    - noctx          # Finds sending HTTP request without context.Context
+    - unparam        # Find unused function parameters
+    - unconvert      # Remove unnecessary type conversions
+    - goconst        # Find repeated strings that could be constants
+    - gocyclo        # Check cyclomatic complexity
+    - dupl           # Code clone detection
+    - gocritic       # Comprehensive linter
+    - stylecheck     # Style check
+    - whitespace     # Whitespace linter
+    - exportloopref  # Check for pointers to enclosing loop variables
+    - sqlclosecheck  # Check SQL rows/statements are closed
+    - nilerr         # Find code that returns nil even though it checks that error is not nil
+    - errname        # Check error names
+    - errorlint      # Find code that causes problems with errors
+    - gofumpt        # Stricter gofmt
+    - nakedret       # Check naked returns in functions
+    - prealloc       # Find slice declarations that could be preallocated
+    - predeclared    # Find code that shadows Go predeclared identifiers
+    - thelper        # Detect test helpers without t.Helper()
+    - wrapcheck      # Check error wrapping
+
+  disable:
+    - exhaustive     # Can be too strict
+    - exhaustruct    # Can be too strict
+    - funlen         # Can be too strict for handlers
+    - lll            # Line length can vary
+    - nlreturn       # Can be too opinionated
+    - wsl            # Can be too opinionated
+    - gomnd          # Magic number detection (can be noisy)
+    - gochecknoglobals # Allow some globals for config
+    - gochecknoinits   # Allow init functions
+
+linters-settings:
+  errcheck:
+    # Report about not checking of errors in type assertions: `a := b.(MyStruct)`;
+    check-type-assertions: true
+    # Report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`;
+    check-blank: true
+
+  govet:
+    # Enable all analyzers
+    enable-all: true
+    # Disable shadow analysis (can be noisy)
+    disable:
+      - shadow
+
+  gofmt:
+    # Simplify code: gofmt with `-s` option
+    simplify: true
+
+  goimports:
+    # Put imports beginning with prefix after 3rd-party packages
+    local-prefixes: github.com/meal-planner/backend
+
+  misspell:
+    locale: US
+    ignore-words:
+      - cancelled
+
+  revive:
+    confidence: 0.8
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+      - name: increment-decrement
+      - name: var-naming
+      - name: var-declaration
+      - name: package-comments
+      - name: range
+      - name: receiver-naming
+      - name: time-naming
+      - name: unexported-return
+      - name: indent-error-flow
+      - name: errorf
+      - name: empty-block
+      - name: superfluous-else
+      - name: unused-parameter
+      - name: unreachable-code
+      - name: redefines-builtin-id
+
+  gosec:
+    # Include test files
+    tests: true
+    # Exclude specific rules (G104: unhandled errors, can be noisy with errcheck)
+    excludes:
+      - G104
+    severity: medium
+    confidence: medium
+
+  gocyclo:
+    # Minimal cyclomatic complexity to report
+    min-complexity: 15
+
+  goconst:
+    # Minimal length of string constant
+    min-len: 3
+    # Minimum occurrences to report
+    min-occurrences: 3
+    # Ignore test files
+    ignore-tests: true
+
+  dupl:
+    # Threshold for duplicate code detection
+    threshold: 100
+
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+      - experimental
+      - opinionated
+    disabled-checks:
+      - whyNoLint # We don't require nolint justifications
+      - hugeParam # Can be too strict
+
+  stylecheck:
+    # Use Go 1.1 style
+    checks: ["all", "-ST1003"]
+    # Initialisms
+    initialisms: ["ACL", "API", "ASCII", "CPU", "CSS", "DNS", "EOF", "GUID", "HTML", "HTTP", "HTTPS", "ID", "IP", "JSON", "JWT", "LHS", "QPS", "RAM", "RHS", "RPC", "SLA", "SMTP", "SQL", "SSH", "TCP", "TLS", "TTL", "UDP", "UI", "GID", "UID", "UUID", "URI", "URL", "UTF8", "VM", "XML", "XMPP", "XSRF", "XSS", "OAuth"]
+
+  whitespace:
+    multi-if: true
+    multi-func: true
+
+  errorlint:
+    # Check for plain type assertions and type switches
+    asserts: true
+    # Check for plain error comparisons
+    comparison: true
+
+  nakedret:
+    # Max number of lines for a function to allow naked returns
+    max-func-lines: 30
+
+  prealloc:
+    # Report preallocation suggestions only on simple loops that have no other expressions
+    simple: true
+    range-loops: true
+    for-loops: false
+
+  wrapcheck:
+    # Ignore errors in test files
+    ignoreSigs:
+      - .Errorf(
+      - errors.New(
+      - errors.Unwrap(
+      - .Wrap(
+      - .Wrapf(
+      - .WithMessage(
+      - .WithMessagef(
+      - .WithStack(
+
+issues:
+  # Maximum issues count per one linter
+  max-issues-per-linter: 0
+
+  # Maximum count of issues with the same text
+  max-same-issues: 0
+
+  # Exclude specific issues
+  exclude-rules:
+    # Exclude lll issues for long lines with go:generate
+    - linters:
+        - lll
+      source: "^//go:generate "
+
+    # Exclude some linters from test files
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - errcheck
+        - dupl
+        - gosec
+        - goconst
+        - funlen
+        - wrapcheck
+
+    # Exclude some staticcheck messages
+    - linters:
+        - staticcheck
+      text: "SA9003:"
+
+    # Exclude revive's unexported-return for now
+    - linters:
+        - revive
+      text: "unexported-return"
+
+  # Show all issues from all linters
+  exclude-use-default: false
+
+  # Independently of option `exclude` we use default exclude patterns,
+  # it can be disabled by this option
+  exclude-case-sensitive: false
+
+output:
+  # Format: colored-line-number|line-number|json|tab|checkstyle|code-climate
+  format: colored-line-number
+
+  # Print lines of code with issue
+  print-issued-lines: true
+
+  # Print linter name in the end of issue text
+  print-linter-name: true
+
+  # Make issues output unique by line
+  uniq-by-line: true
+
+  # Sort results by: filepath, line and column
+  sort-results: true
