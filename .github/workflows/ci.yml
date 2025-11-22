@@ -194,7 +194,7 @@ jobs:
           go build -v -ldflags="-w -s -X main.version=$(git describe --tags --always --dirty) -X main.commit=$(git rev-parse --short HEAD) -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" -o bin/meal-planner-api-${{ matrix.goos }}-${{ matrix.goarch }} cmd/server/main.go
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: meal-planner-api-${{ matrix.goos }}-${{ matrix.goarch }}
           path: bin/meal-planner-api-${{ matrix.goos }}-${{ matrix.goarch }}
