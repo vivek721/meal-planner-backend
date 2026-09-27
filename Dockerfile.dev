@@ -5,7 +5,7 @@ FROM golang:1.26-alpine
 RUN apk add --no-cache git ca-certificates tzdata
 
 # Install Air for hot reload
-RUN go install github.com/cosmtrek/air@latest
+RUN go install github.com/air-verse/air@latest
 
 # Set working directory
 WORKDIR /app

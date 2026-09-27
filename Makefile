@@ -26,7 +26,7 @@ build: ## Build the application
 run: ## Run the application
 	$(GO) run cmd/server/main.go
 
-dev: ## Run with hot reload (requires air: go install github.com/cosmtrek/air@latest)
+dev: ## Run with hot reload (requires air: go install github.com/air-verse/air@latest)
 	air
 
 test: ## Run tests
