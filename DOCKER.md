@@ -124,7 +124,7 @@ After running `docker-up` or `docker-compose up -d`:
 #### Backend Service (`backend`)
 - **Image**: Built from local Dockerfile (multi-stage build)
 - **Port**: 3001 (mapped to host)
-- **Language**: Go 1.21
+- **Language**: Go 1.26
 - **Framework**: Gin
 - **ORM**: GORM
 - **Features**:
@@ -231,7 +231,7 @@ docker-compose build --no-cache
 The production Dockerfile uses a multi-stage build:
 
 **Stage 1: Builder**
-- Base: golang:1.21-alpine
+- Base: golang:1.26-alpine
 - Installs build dependencies
 - Downloads Go modules (cached layer)
 - Compiles static binary with optimizations

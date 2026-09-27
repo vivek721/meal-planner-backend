@@ -28,7 +28,7 @@ Successfully dockerized the Golang backend to solve PostgreSQL installation issu
 1. **Dockerfile** (Production)
    - Location: `C:\Users\mishr\myApp\backend\Dockerfile`
    - Multi-stage build (builder + runtime)
-   - Base: golang:1.21-alpine (builder), alpine:latest (runtime)
+   - Base: golang:1.26-alpine (builder), alpine:latest (runtime)
    - Size: ~15-20 MB final image
    - Features: Non-root user, health checks, optimized binary
 
