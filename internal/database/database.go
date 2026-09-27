@@ -1,13 +1,15 @@
+// Package database opens the PostgreSQL connection and runs migrations.
 package database
 
 import (
 	"fmt"
 
-	"github.com/meal-planner/backend/internal/config"
-	"github.com/meal-planner/backend/internal/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	"github.com/meal-planner/backend/internal/config"
+	"github.com/meal-planner/backend/internal/models"
 )
 
 // NewConnection creates a new database connection
@@ -58,8 +60,11 @@ func NewConnection(cfg *config.Config) (*gorm.DB, error) {
 
 // Migrate runs database migrations
 func Migrate(db *gorm.DB) error {
-	return db.AutoMigrate(
+	if err := db.AutoMigrate(
 		&models.User{},
 		// Add other models here as they are created
-	)
+	); err != nil {
+		return fmt.Errorf("auto-migrate: %w", err)
+	}
+	return nil
 }

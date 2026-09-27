@@ -9,10 +9,10 @@ import (
 	"github.com/meal-planner/backend/internal/utils"
 )
 
-var (
-	ErrCurrentPasswordIncorrect = errors.New("current password is incorrect")
-)
+// ErrCurrentPasswordIncorrect is returned by ChangePassword when the current password does not match.
+var ErrCurrentPasswordIncorrect = errors.New("current password is incorrect")
 
+// UserService manages the authenticated user's profile and settings.
 type UserService interface {
 	GetUserByID(userID string) (*models.User, error)
 	UpdateProfile(userID, name, email string) (*models.User, error)
@@ -26,6 +26,7 @@ type userService struct {
 	config   *config.Config
 }
 
+// NewUserService creates a UserService.
 func NewUserService(userRepo repository.UserRepository, cfg *config.Config) UserService {
 	return &userService{
 		userRepo: userRepo,

@@ -41,7 +41,7 @@ func TestGenerateRandomString(t *testing.T) {
 			t.Errorf("len(generateRandomString(%d)) = %d", n, len(s))
 		}
 		for _, c := range s {
-			if !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9') {
+			if (c < 'a' || c > 'z') && (c < '0' || c > '9') {
 				t.Errorf("generateRandomString(%d) = %q contains %q", n, s, c)
 			}
 		}

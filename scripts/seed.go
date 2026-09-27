@@ -1,3 +1,4 @@
+// Command seed inserts sample users into the database for local development.
 package main
 
 import (
@@ -5,10 +6,11 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/meal-planner/backend/internal/config"
 	"github.com/meal-planner/backend/internal/database"
 	"github.com/meal-planner/backend/internal/models"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func main() {

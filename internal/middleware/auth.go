@@ -1,3 +1,4 @@
+// Package middleware provides the Gin middleware used by the API.
 package middleware
 
 import (
@@ -5,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/meal-planner/backend/internal/config"
 	"github.com/meal-planner/backend/internal/utils"
 )

@@ -1,15 +1,17 @@
+// Package router wires middleware, handlers and routes into a Gin engine.
 package router
 
 import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/meal-planner/backend/internal/config"
 	"github.com/meal-planner/backend/internal/handlers"
 	"github.com/meal-planner/backend/internal/middleware"
 	"github.com/meal-planner/backend/internal/repository"
 	"github.com/meal-planner/backend/internal/services"
-	"gorm.io/gorm"
 )
 
 // Setup initializes and configures the router backed by the given database.
@@ -82,16 +84,14 @@ func New(userRepo repository.UserRepository, cfg *config.Config) *gin.Engine {
 			// Protected auth routes
 			protected := auth.Group("")
 			protected.Use(middleware.AuthMiddleware(cfg))
-			{
-				protected.GET("/me", userHandler.GetMe)
-				protected.POST("/logout", authHandler.Logout)
-				protected.PUT("/profile", userHandler.UpdateProfile)
-				protected.PUT("/password", userHandler.ChangePassword)
-				protected.PUT("/preferences", userHandler.UpdatePreferences)
+			protected.GET("/me", userHandler.GetMe)
+			protected.POST("/logout", authHandler.Logout)
+			protected.PUT("/profile", userHandler.UpdateProfile)
+			protected.PUT("/password", userHandler.ChangePassword)
+			protected.PUT("/preferences", userHandler.UpdatePreferences)
 
-				// Onboarding
-				protected.POST("/onboarding/complete", userHandler.CompleteOnboarding)
-			}
+			// Onboarding
+			protected.POST("/onboarding/complete", userHandler.CompleteOnboarding)
 		}
 	}
 

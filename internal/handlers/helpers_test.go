@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/meal-planner/backend/internal/config"
 	"github.com/meal-planner/backend/internal/models"
 	"github.com/meal-planner/backend/internal/router"
@@ -43,17 +44,17 @@ func newTestServer(t *testing.T) *testServer {
 }
 
 // seedUser stores a user with testPassword and returns it with a valid token.
-func (s *testServer) seedUser(t *testing.T, email string) (*models.User, string) {
+func (s *testServer) seedUser(t *testing.T, email string) (user *models.User, token string) {
 	t.Helper()
 	hash, err := utils.HashPassword(testPassword, 4)
 	if err != nil {
 		t.Fatal(err)
 	}
-	user := &models.User{Email: email, Name: "Test User", PasswordHash: hash}
+	user = &models.User{Email: email, Name: "Test User", PasswordHash: hash}
 	if err := s.repo.Create(user); err != nil {
 		t.Fatal(err)
 	}
-	token, err := utils.GenerateToken(user.ID, user.Email, testSecret, time.Hour)
+	token, err = utils.GenerateToken(user.ID, user.Email, testSecret, time.Hour)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,7 +63,7 @@ func (s *testServer) seedUser(t *testing.T, email string) (*models.User, string)
 
 // do sends a request; body is JSON-encoded unless it is a string, and an
 // empty token means no Authorization header.
-func (s *testServer) do(t *testing.T, method, path string, body any, token string) (int, map[string]any) {
+func (s *testServer) do(t *testing.T, method, path string, body any, token string) (status int, resp map[string]any) {
 	t.Helper()
 	var buf bytes.Buffer
 	switch b := body.(type) {
@@ -74,7 +75,7 @@ func (s *testServer) do(t *testing.T, method, path string, body any, token strin
 			t.Fatal(err)
 		}
 	}
-	req := httptest.NewRequest(method, path, &buf)
+	req := httptest.NewRequestWithContext(t.Context(), method, path, &buf)
 	req.Header.Set("Content-Type", "application/json")
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
@@ -82,7 +83,6 @@ func (s *testServer) do(t *testing.T, method, path string, body any, token strin
 	w := httptest.NewRecorder()
 	s.engine.ServeHTTP(w, req)
 
-	var resp map[string]any
 	if w.Body.Len() > 0 {
 		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 			t.Fatalf("response is not JSON: %q", w.Body.String())

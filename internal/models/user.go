@@ -1,3 +1,4 @@
+// Package models defines the GORM data models.
 package models
 
 import (
@@ -40,7 +41,7 @@ type LoginAttemptInfo struct {
 }
 
 // BeforeCreate hook to generate ID if not set
-func (u *User) BeforeCreate(tx *gorm.DB) error {
+func (u *User) BeforeCreate(_ *gorm.DB) error {
 	if u.ID == "" {
 		id, err := generateID("user")
 		if err != nil {

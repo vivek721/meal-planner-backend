@@ -5,15 +5,18 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/meal-planner/backend/internal/middleware"
 	"github.com/meal-planner/backend/internal/models"
 	"github.com/meal-planner/backend/internal/services"
 )
 
+// UserHandler serves the authenticated user endpoints.
 type UserHandler struct {
 	userService services.UserService
 }
 
+// NewUserHandler creates a UserHandler.
 func NewUserHandler(userService services.UserService) *UserHandler {
 	return &UserHandler{
 		userService: userService,
@@ -45,7 +48,7 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 	userID, exists := middleware.GetUserID(c)
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "unauthorized",
+			"error": msgUnauthorized,
 		})
 		return
 	}
@@ -76,7 +79,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	userID, exists := middleware.GetUserID(c)
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "unauthorized",
+			"error": msgUnauthorized,
 		})
 		return
 	}
@@ -84,7 +87,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	var req UpdateProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid request body",
+			"error": msgInvalidRequestBody,
 		})
 		return
 	}
@@ -94,18 +97,16 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		statusCode := http.StatusInternalServerError
 		errorMsg := "failed to update profile"
 
-		switch err {
-		case services.ErrUserNotFound:
+		switch {
+		case errors.Is(err, services.ErrUserNotFound):
 			statusCode = http.StatusNotFound
 			errorMsg = "user not found"
-		case services.ErrUserAlreadyExists:
+		case errors.Is(err, services.ErrUserAlreadyExists):
 			statusCode = http.StatusConflict
 			errorMsg = "email already in use"
-		default:
-			if err.Error() == "invalid email format" {
-				statusCode = http.StatusBadRequest
-				errorMsg = err.Error()
-			}
+		case isValidationError(err):
+			statusCode = http.StatusBadRequest
+			errorMsg = err.Error()
 		}
 
 		c.JSON(statusCode, gin.H{
@@ -125,7 +126,7 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 	userID, exists := middleware.GetUserID(c)
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "unauthorized",
+			"error": msgUnauthorized,
 		})
 		return
 	}
@@ -133,7 +134,7 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 	var req ChangePasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid request body",
+			"error": msgInvalidRequestBody,
 		})
 		return
 	}
@@ -143,19 +144,16 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 		statusCode := http.StatusInternalServerError
 		errorMsg := "failed to change password"
 
-		switch err {
-		case services.ErrUserNotFound:
+		switch {
+		case errors.Is(err, services.ErrUserNotFound):
 			statusCode = http.StatusNotFound
 			errorMsg = "user not found"
-		case services.ErrCurrentPasswordIncorrect:
+		case errors.Is(err, services.ErrCurrentPasswordIncorrect):
 			statusCode = http.StatusBadRequest
 			errorMsg = "current password is incorrect"
-		default:
-			if err.Error() == "password must be at least 8 characters" ||
-				err.Error() == "password must contain uppercase, lowercase, number, and special character" {
-				statusCode = http.StatusBadRequest
-				errorMsg = err.Error()
-			}
+		case isValidationError(err):
+			statusCode = http.StatusBadRequest
+			errorMsg = err.Error()
 		}
 
 		c.JSON(statusCode, gin.H{
@@ -175,7 +173,7 @@ func (h *UserHandler) CompleteOnboarding(c *gin.Context) {
 	userID, exists := middleware.GetUserID(c)
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "unauthorized",
+			"error": msgUnauthorized,
 		})
 		return
 	}
@@ -199,7 +197,7 @@ func (h *UserHandler) UpdatePreferences(c *gin.Context) {
 	userID, exists := middleware.GetUserID(c)
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "unauthorized",
+			"error": msgUnauthorized,
 		})
 		return
 	}
@@ -207,7 +205,7 @@ func (h *UserHandler) UpdatePreferences(c *gin.Context) {
 	var req UpdatePreferencesRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid request body",
+			"error": msgInvalidRequestBody,
 		})
 		return
 	}

@@ -1,17 +1,21 @@
+// Package utils provides JWT, password hashing and input validation helpers.
 package utils
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// Errors returned by ValidateToken.
 var (
 	ErrInvalidToken = errors.New("invalid token")
 	ErrExpiredToken = errors.New("token has expired")
 )
 
+// JWTClaims are the claims carried by access tokens.
 type JWTClaims struct {
 	UserID string `json:"userId"`
 	Email  string `json:"email"`
@@ -31,7 +35,11 @@ func GenerateToken(userID, email, secret string, expiration time.Duration) (stri
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(secret))
+	signed, err := token.SignedString([]byte(secret))
+	if err != nil {
+		return "", fmt.Errorf("sign token: %w", err)
+	}
+	return signed, nil
 }
 
 // ValidateToken validates a JWT token and returns the claims
@@ -43,7 +51,6 @@ func ValidateToken(tokenString, secret string) (*JWTClaims, error) {
 		}
 		return []byte(secret), nil
 	})
-
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
 			return nil, ErrExpiredToken

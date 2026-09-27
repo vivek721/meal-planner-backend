@@ -7,6 +7,7 @@ import (
 	"unicode"
 )
 
+// Validation errors. Handlers return their messages to clients.
 var (
 	ErrInvalidEmail        = errors.New("invalid email format")
 	ErrPasswordTooShort    = errors.New("password must be at least 8 characters")

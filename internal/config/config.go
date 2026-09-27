@@ -1,3 +1,4 @@
+// Package config loads application settings from environment variables.
 package config
 
 import (
@@ -6,6 +7,7 @@ import (
 	"time"
 )
 
+// Config holds all runtime configuration.
 type Config struct {
 	// Server configuration
 	Port        string

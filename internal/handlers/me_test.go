@@ -53,7 +53,7 @@ func TestGetMe_RequiresValidBearerToken(t *testing.T) {
 	s.seedUser(t, "me@example.com")
 
 	for _, header := range []string{"", "Bearer", "Basic abc", "Bearer not-a-jwt", "x"} {
-		req := httptest.NewRequest(http.MethodGet, "/api/auth/me", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/auth/me", http.NoBody)
 		if header != "" {
 			req.Header.Set("Authorization", header)
 		}

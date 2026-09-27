@@ -1,3 +1,4 @@
+// Package services implements the business logic behind the handlers.
 package services
 
 import (
@@ -12,11 +13,13 @@ import (
 	"github.com/meal-planner/backend/internal/utils"
 )
 
+// Account lockout policy.
 const (
 	MaxLoginAttempts = 3
 	LockDuration     = 5 * time.Minute
 )
 
+// Errors returned by AuthService.
 var (
 	ErrUserAlreadyExists  = errors.New("user with this email already exists")
 	ErrInvalidCredentials = errors.New("invalid email or password")
@@ -49,6 +52,7 @@ func (e *AccountLockedError) Is(target error) bool {
 	return target == ErrAccountLocked
 }
 
+// AuthService handles registration, login and token management.
 type AuthService interface {
 	Register(email, password, name string) (*models.User, string, error)
 	Login(email, password string) (*models.User, string, error)
@@ -61,6 +65,7 @@ type authService struct {
 	config   *config.Config
 }
 
+// NewAuthService creates an AuthService.
 func NewAuthService(userRepo repository.UserRepository, cfg *config.Config) AuthService {
 	return &authService{
 		userRepo: userRepo,
@@ -140,7 +145,9 @@ func (s *authService) Login(email, password string) (*models.User, string, error
 	if !utils.VerifyPassword(password, user.PasswordHash) {
 		// Increment failed login attempts
 		user.IncrementLoginAttempts(MaxLoginAttempts, LockDuration)
-		s.userRepo.Update(user)
+		if err := s.userRepo.Update(user); err != nil {
+			return nil, "", err
+		}
 
 		if user.IsAccountLocked() {
 			return nil, "", ErrAccountLocked

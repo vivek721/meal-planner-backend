@@ -5,13 +5,16 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/meal-planner/backend/internal/services"
 )
 
+// AuthHandler serves the public authentication endpoints.
 type AuthHandler struct {
 	authService services.AuthService
 }
 
+// NewAuthHandler creates an AuthHandler.
 func NewAuthHandler(authService services.AuthService) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
@@ -50,7 +53,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid request body",
+			"error": msgInvalidRequestBody,
 		})
 		return
 	}
@@ -61,21 +64,13 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		statusCode := http.StatusInternalServerError
 		errorMsg := "failed to register user"
 
-		switch err {
-		case services.ErrUserAlreadyExists:
+		switch {
+		case errors.Is(err, services.ErrUserAlreadyExists):
 			statusCode = http.StatusConflict
 			errorMsg = "Email already exists"
-		default:
-			if err.Error() == "invalid email format" ||
-				err.Error() == "email is required" {
-				statusCode = http.StatusBadRequest
-				errorMsg = err.Error()
-			} else if err.Error() == "password must be at least 8 characters" ||
-				err.Error() == "password must contain uppercase, lowercase, number, and special character" ||
-				err.Error() == "password is required" {
-				statusCode = http.StatusBadRequest
-				errorMsg = err.Error()
-			}
+		case isValidationError(err):
+			statusCode = http.StatusBadRequest
+			errorMsg = err.Error()
 		}
 
 		c.JSON(statusCode, gin.H{
@@ -96,7 +91,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid request body",
+			"error": msgInvalidRequestBody,
 		})
 		return
 	}
@@ -132,7 +127,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	var req RefreshTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid request body",
+			"error": msgInvalidRequestBody,
 		})
 		return
 	}

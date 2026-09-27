@@ -1,13 +1,16 @@
+// Package repository implements data access on top of GORM.
 package repository
 
 import (
 	"errors"
 	"strings"
 
-	"github.com/meal-planner/backend/internal/models"
 	"gorm.io/gorm"
+
+	"github.com/meal-planner/backend/internal/models"
 )
 
+// UserRepository persists users.
 type UserRepository interface {
 	Create(user *models.User) error
 	FindByEmail(email string) (*models.User, error)
@@ -20,6 +23,7 @@ type userRepository struct {
 	db *gorm.DB
 }
 
+// NewUserRepository returns a GORM-backed UserRepository.
 func NewUserRepository(db *gorm.DB) UserRepository {
 	return &userRepository{db: db}
 }

@@ -1,3 +1,4 @@
+// Command server runs the Meal Planner HTTP API.
 package main
 
 import (
@@ -5,6 +6,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+
 	"github.com/meal-planner/backend/internal/config"
 	"github.com/meal-planner/backend/internal/database"
 	"github.com/meal-planner/backend/internal/router"
