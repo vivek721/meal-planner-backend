@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -107,17 +108,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		statusCode := http.StatusUnauthorized
 		errorMsg := "Invalid email or password"
 
-		switch err {
-		case services.ErrInvalidCredentials:
-			errorMsg = "Invalid email or password"
-		case services.ErrAccountLocked:
+		// Matches both ErrAccountLocked and *services.AccountLockedError
+		// (whose message includes the remaining lock time).
+		if errors.Is(err, services.ErrAccountLocked) {
 			statusCode = http.StatusForbidden
 			errorMsg = err.Error()
-		default:
-			if err.Error() != "" && err.Error()[:15] == "account is lock" {
-				statusCode = http.StatusForbidden
-				errorMsg = err.Error()
-			}
 		}
 
 		c.JSON(statusCode, gin.H{

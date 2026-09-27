@@ -2,6 +2,8 @@ package services
 
 import (
 	"errors"
+	"fmt"
+	"math"
 	"time"
 
 	"github.com/meal-planner/backend/internal/config"
@@ -21,6 +23,31 @@ var (
 	ErrAccountLocked      = errors.New("account is locked due to too many failed login attempts")
 	ErrUserNotFound       = errors.New("user not found")
 )
+
+// AccountLockedError is returned by Login while an account is still locked.
+// It matches ErrAccountLocked via errors.Is, and its message states the
+// remaining lock time in whole minutes (rounded up).
+type AccountLockedError struct {
+	Remaining time.Duration
+}
+
+// Minutes returns the remaining lock time in minutes, rounded up (minimum 1).
+func (e *AccountLockedError) Minutes() int {
+	minutes := int(math.Ceil(e.Remaining.Minutes()))
+	if minutes < 1 {
+		minutes = 1
+	}
+	return minutes
+}
+
+func (e *AccountLockedError) Error() string {
+	return fmt.Sprintf("account is locked. Please try again in %d minute(s)", e.Minutes())
+}
+
+// Is reports whether target is ErrAccountLocked.
+func (e *AccountLockedError) Is(target error) bool {
+	return target == ErrAccountLocked
+}
 
 type AuthService interface {
 	Register(email, password, name string) (*models.User, string, error)
@@ -106,9 +133,7 @@ func (s *authService) Login(email, password string) (*models.User, string, error
 
 	// Check if account is locked
 	if user.IsAccountLocked() {
-		remainingTime := time.Until(*user.AccountLockedUntil)
-		minutes := int(remainingTime.Minutes()) + 1
-		return nil, "", errors.New("account is locked. Please try again in " + string(rune(minutes)) + " minute(s)")
+		return nil, "", &AccountLockedError{Remaining: time.Until(*user.AccountLockedUntil)}
 	}
 
 	// Verify password
