@@ -29,7 +29,7 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
-			"status": "healthy",
+			"status":  "healthy",
 			"service": "meal-planner-api",
 		})
 	})
@@ -42,14 +42,14 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			"endpoints": gin.H{
 				"health": "/health",
 				"auth": gin.H{
-					"register": "POST /api/auth/register",
-					"login": "POST /api/auth/login",
-					"refresh": "POST /api/auth/refresh",
-					"me": "GET /api/auth/me (protected)",
-					"logout": "POST /api/auth/logout (protected)",
-					"profile": "PUT /api/auth/profile (protected)",
-					"password": "PUT /api/auth/password (protected)",
-					"onboarding": "POST /api/auth/onboarding/complete (protected)",
+					"register":    "POST /api/auth/register",
+					"login":       "POST /api/auth/login",
+					"refresh":     "POST /api/auth/refresh",
+					"me":          "GET /api/auth/me (protected)",
+					"logout":      "POST /api/auth/logout (protected)",
+					"profile":     "PUT /api/auth/profile (protected)",
+					"password":    "PUT /api/auth/password (protected)",
+					"onboarding":  "POST /api/auth/onboarding/complete (protected)",
 					"preferences": "PUT /api/auth/preferences (protected)",
 				},
 			},

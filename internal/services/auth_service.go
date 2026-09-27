@@ -16,10 +16,10 @@ const (
 )
 
 var (
-	ErrUserAlreadyExists   = errors.New("user with this email already exists")
-	ErrInvalidCredentials  = errors.New("invalid email or password")
-	ErrAccountLocked       = errors.New("account is locked due to too many failed login attempts")
-	ErrUserNotFound        = errors.New("user not found")
+	ErrUserAlreadyExists  = errors.New("user with this email already exists")
+	ErrInvalidCredentials = errors.New("invalid email or password")
+	ErrAccountLocked      = errors.New("account is locked due to too many failed login attempts")
+	ErrUserNotFound       = errors.New("user not found")
 )
 
 type AuthService interface {

@@ -8,22 +8,22 @@ import (
 
 // User represents a user in the system
 type User struct {
-	ID                      string         `gorm:"type:varchar(255);primaryKey" json:"id"`
-	Email                   string         `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
-	Name                    string         `gorm:"type:varchar(255)" json:"name,omitempty"`
-	PasswordHash            string         `gorm:"type:varchar(255);not null" json:"-"`
-	HasCompletedOnboarding  bool           `gorm:"default:false" json:"hasCompletedOnboarding"`
-	CreatedAt               time.Time      `json:"createdAt"`
-	UpdatedAt               time.Time      `json:"updatedAt"`
-	DeletedAt               gorm.DeletedAt `gorm:"index" json:"-"`
+	ID                     string         `gorm:"type:varchar(255);primaryKey" json:"id"`
+	Email                  string         `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
+	Name                   string         `gorm:"type:varchar(255)" json:"name,omitempty"`
+	PasswordHash           string         `gorm:"type:varchar(255);not null" json:"-"`
+	HasCompletedOnboarding bool           `gorm:"default:false" json:"hasCompletedOnboarding"`
+	CreatedAt              time.Time      `json:"createdAt"`
+	UpdatedAt              time.Time      `json:"updatedAt"`
+	DeletedAt              gorm.DeletedAt `gorm:"index" json:"-"`
 
 	// Login tracking
-	LoginAttempts           int            `gorm:"default:0" json:"-"`
-	LastLoginAttempt        *time.Time     `json:"-"`
-	AccountLockedUntil      *time.Time     `json:"-"`
+	LoginAttempts      int        `gorm:"default:0" json:"-"`
+	LastLoginAttempt   *time.Time `json:"-"`
+	AccountLockedUntil *time.Time `json:"-"`
 
 	// Preferences
-	Preferences             *UserPreferences `gorm:"embedded;embeddedPrefix:pref_" json:"preferences,omitempty"`
+	Preferences *UserPreferences `gorm:"embedded;embeddedPrefix:pref_" json:"preferences,omitempty"`
 }
 
 // UserPreferences stores user preferences
@@ -64,12 +64,12 @@ func (u *User) ToPublicUser() *PublicUser {
 
 // PublicUser represents user data safe for API responses (no sensitive fields)
 type PublicUser struct {
-	ID                     string            `json:"id"`
-	Email                  string            `json:"email"`
-	Name                   string            `json:"name,omitempty"`
-	HasCompletedOnboarding bool              `json:"hasCompletedOnboarding"`
-	CreatedAt              string            `json:"createdAt"`
-	Preferences            *UserPreferences  `json:"preferences,omitempty"`
+	ID                     string           `json:"id"`
+	Email                  string           `json:"email"`
+	Name                   string           `json:"name,omitempty"`
+	HasCompletedOnboarding bool             `json:"hasCompletedOnboarding"`
+	CreatedAt              string           `json:"createdAt"`
+	Preferences            *UserPreferences `json:"preferences,omitempty"`
 }
 
 // GetLoginAttemptInfo returns login attempt information

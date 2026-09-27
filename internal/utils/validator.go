@@ -8,12 +8,12 @@ import (
 )
 
 var (
-	ErrInvalidEmail            = errors.New("invalid email format")
-	ErrPasswordTooShort        = errors.New("password must be at least 8 characters")
-	ErrPasswordTooWeak         = errors.New("password must contain uppercase, lowercase, number, and special character")
-	ErrEmailRequired           = errors.New("email is required")
-	ErrPasswordRequired        = errors.New("password is required")
-	ErrPasswordsDoNotMatch     = errors.New("passwords do not match")
+	ErrInvalidEmail        = errors.New("invalid email format")
+	ErrPasswordTooShort    = errors.New("password must be at least 8 characters")
+	ErrPasswordTooWeak     = errors.New("password must contain uppercase, lowercase, number, and special character")
+	ErrEmailRequired       = errors.New("email is required")
+	ErrPasswordRequired    = errors.New("password is required")
+	ErrPasswordsDoNotMatch = errors.New("passwords do not match")
 )
 
 var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)

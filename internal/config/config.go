@@ -21,9 +21,9 @@ type Config struct {
 	DatabaseSSLMode  string
 
 	// JWT configuration
-	JWTSecret           string
-	JWTExpirationHours  int
-	JWTRefreshDays      int
+	JWTSecret          string
+	JWTExpirationHours int
+	JWTRefreshDays     int
 
 	// Security configuration
 	BcryptCost int
