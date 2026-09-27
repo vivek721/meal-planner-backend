@@ -124,7 +124,7 @@ After running `docker-up` or `docker-compose up -d`:
 #### Backend Service (`backend`)
 - **Image**: Built from local Dockerfile (multi-stage build)
 - **Port**: 3001 (mapped to host)
-- **Language**: Go 1.21
+- **Language**: Go 1.26
 - **Framework**: Gin
 - **ORM**: GORM
 - **Features**:
@@ -231,7 +231,7 @@ docker-compose build --no-cache
 The production Dockerfile uses a multi-stage build:
 
 **Stage 1: Builder**
-- Base: golang:1.21-alpine
+- Base: golang:1.26-alpine
 - Installs build dependencies
 - Downloads Go modules (cached layer)
 - Compiles static binary with optimizations
@@ -324,7 +324,6 @@ DB_HOST=postgres  # Docker service name, not 'localhost'
 | `DATABASE_URL` | See above | PostgreSQL connection string |
 | `JWT_SECRET` | (change in prod!) | Secret key for JWT tokens |
 | `JWT_EXPIRATION_HOURS` | 24 | Access token expiration |
-| `JWT_REFRESH_DAYS` | 30 | Refresh token expiration |
 | `BCRYPT_COST` | 12 | Password hashing cost |
 | `FRONTEND_URL` | http://localhost:3000 | CORS allowed origin |
 | `RATE_LIMIT_ENABLED` | true | Enable rate limiting |

@@ -1,3 +1,4 @@
+// Command seed inserts sample users into the database for local development.
 package main
 
 import (
@@ -5,10 +6,11 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/meal-planner/backend/internal/config"
 	"github.com/meal-planner/backend/internal/database"
 	"github.com/meal-planner/backend/internal/models"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func main() {
@@ -38,27 +40,27 @@ func main() {
 
 	// Create test users
 	testUsers := []struct {
-		email    string
-		name     string
-		password string
+		email     string
+		name      string
+		password  string
 		onboarded bool
 	}{
 		{
-			email:    "test@example.com",
-			name:     "Test User",
-			password: "password123",
+			email:     "test@example.com",
+			name:      "Test User",
+			password:  "password123",
 			onboarded: true,
 		},
 		{
-			email:    "demo@example.com",
-			name:     "Demo User",
-			password: "demo123",
+			email:     "demo@example.com",
+			name:      "Demo User",
+			password:  "demo123",
 			onboarded: true,
 		},
 		{
-			email:    "newuser@example.com",
-			name:     "New User",
-			password: "newpass123",
+			email:     "newuser@example.com",
+			name:      "New User",
+			password:  "newpass123",
 			onboarded: false,
 		},
 	}

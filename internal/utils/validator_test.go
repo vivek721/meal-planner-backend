@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"testing"
 )
 
@@ -50,7 +51,7 @@ func TestValidateEmail(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := ValidateEmail(tt.email)
-			if err != tt.wantErr {
+			if !errors.Is(err, tt.wantErr) {
 				t.Errorf("ValidateEmail() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -59,9 +60,9 @@ func TestValidateEmail(t *testing.T) {
 
 func TestValidatePassword(t *testing.T) {
 	tests := []struct {
-		name    string
+		name     string
 		password string
-		wantErr error
+		wantErr  error
 	}{
 		{
 			name:     "valid strong password",
@@ -108,7 +109,7 @@ func TestValidatePassword(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := ValidatePassword(tt.password)
-			if err != tt.wantErr {
+			if !errors.Is(err, tt.wantErr) {
 				t.Errorf("ValidatePassword() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -156,7 +157,7 @@ func TestValidateRegistration(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := ValidateRegistration(tt.email, tt.password, tt.confirmPassword)
-			if err != tt.wantErr {
+			if !errors.Is(err, tt.wantErr) {
 				t.Errorf("ValidateRegistration() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

@@ -19,7 +19,8 @@ Frontend (React + TypeScript): [vivek721/meal-planner-frontend](https://github.c
   They must be at least 8 characters and contain an uppercase letter, a lowercase letter, a digit
   and a symbol.
 - **Account lockout.** After 3 failed logins an account is locked for 5 minutes, and the API
-  returns `403` while it stays locked. A successful login resets the counter.
+  returns `403` while it stays locked (for example, `account is locked. Please try again in 4
+  minute(s)`). A successful login resets the counter.
 - **JWT middleware.** Protected routes require `Authorization: Bearer <token>`. The middleware
   checks the signature, the signing method and the expiry, then puts the user ID into the request
   context.
@@ -37,19 +38,20 @@ Frontend (React + TypeScript): [vivek721/meal-planner-frontend](https://github.c
 - **Containers.** A multi-stage Dockerfile builds a static binary that runs on Alpine as a
   non-root user with a `HEALTHCHECK`. There are Compose files for a production-like stack and for a
   hot-reload (Air) dev stack.
-- **CI.** GitHub Actions workflows run golangci-lint, `go vet`, tests on Go 1.21 and 1.22, gosec,
-  CodeQL and a Docker build. Dependabot handles Go module and Docker updates.
+- **CI.** GitHub Actions workflows run gofmt, `go vet`, golangci-lint (v2), tests on Go 1.26 and
+  1.27 with a 70% coverage gate, gosec, govulncheck, CodeQL and a Docker build. Dependabot handles
+  Go module and Docker updates.
 
 ## Tech Stack
 
 | Area | Choice |
 |------|--------|
-| Language | Go 1.21 |
+| Language | Go 1.26 |
 | HTTP | [Gin](https://github.com/gin-gonic/gin), [gin-contrib/cors](https://github.com/gin-contrib/cors) |
 | Database | PostgreSQL 14, [GORM](https://gorm.io) (pgx driver) |
 | Auth | [golang-jwt/jwt v5](https://github.com/golang-jwt/jwt), `golang.org/x/crypto/bcrypt` |
 | Config | Environment variables, optional `.env` via [godotenv](https://github.com/joho/godotenv) |
-| Tooling | Air (hot reload), golangci-lint, gosec, Docker / Docker Compose, GitHub Actions |
+| Tooling | Air (hot reload), golangci-lint v2, gosec, govulncheck, Docker / Docker Compose, GitHub Actions |
 
 ## Architecture
 
@@ -60,8 +62,9 @@ Request -> Gin router -> middleware (recover, logger, CORS, [JWT auth])
         -> repository (GORM queries) -> PostgreSQL
 ```
 
-Dependencies are wired by hand in `router.Setup`: the repository goes into the services, and the
-services go into the handlers. Services and repositories are exposed as Go interfaces.
+Dependencies are wired by hand in `router.New`: the repository goes into the services, and the
+services go into the handlers. `router.Setup` calls it with the GORM repository, and the tests call
+it with an in-memory one. Services and repositories are exposed as Go interfaces.
 
 ```
 cmd/server/main.go        # entry point: load .env/config, connect DB, AutoMigrate, start Gin
@@ -73,8 +76,9 @@ internal/
   handlers/               # auth_handler.go, user_handler.go
   services/               # auth_service.go, user_service.go
   repository/             # user_repository.go
-  models/                 # User model, PublicUser DTO, ID generation
-  utils/                  # JWT, bcrypt, email/password validation (+ unit tests)
+  models/                 # User model, PublicUser DTO, ID generation (crypto/rand)
+  utils/                  # JWT, bcrypt, email/password validation
+  testutil/               # in-memory UserRepository used by the tests
 scripts/seed.go           # inserts sample users into an empty database
 ```
 
@@ -141,8 +145,8 @@ To get hot reload in a container (Air plus a mounted source tree), use `make doc
 
 ### Option B: Run locally
 
-Prerequisites: Go 1.21+ and PostgreSQL. To get hot reload, also install Air
-(`go install github.com/cosmtrek/air@latest`).
+Prerequisites: Go 1.26+ and PostgreSQL. To get hot reload, also install Air
+(`go install github.com/air-verse/air@latest`).
 
 ```bash
 cp .env.example .env          # then edit values as needed
@@ -170,8 +174,8 @@ These are read in `internal/config/config.go`. A `.env` file is loaded if one ex
 | `BCRYPT_COST` | `12` | bcrypt work factor |
 | `FRONTEND_URL` | `http://localhost:3000` | The only allowed CORS origin |
 
-`JWT_REFRESH_DAYS`, `RATE_LIMIT_ENABLED` and `RATE_LIMIT_PER_MIN` appear in `.env.example` and are
-parsed into the config, but no code reads them yet.
+`RATE_LIMIT_ENABLED` and `RATE_LIMIT_PER_MIN` appear in `.env.example` and are parsed into the
+config, but no code reads them yet.
 
 ## Running Tests
 
@@ -181,8 +185,11 @@ make test-coverage    # writes coverage.out and coverage.html
 make test-race        # with the race detector
 ```
 
-The unit tests currently cover `internal/utils`: password hashing and verification, and email and
-password validation. The handlers, services and repository have no tests yet.
+The unit tests need no database. They cover config loading, the JWT/bcrypt/validation helpers,
+the middleware, the models, the services (against an in-memory repository) and every endpoint
+through the real router. `go test ./... -cover` reports about 74% of statements in total, and CI
+fails below 70%. The GORM repository, the database setup and the `main` packages are not covered,
+because they need PostgreSQL.
 
 ## Roadmap
 
@@ -194,4 +201,4 @@ These items are planned (see `docs/epics/`) and **not implemented yet**:
 - Meal recommendations and nutrition analysis
 - Notifications (email) and admin features
 - Rate limiting, server-side token revocation, separate long-lived refresh tokens
-- Handler/service tests and integration tests against PostgreSQL
+- Integration tests against PostgreSQL (repository layer)

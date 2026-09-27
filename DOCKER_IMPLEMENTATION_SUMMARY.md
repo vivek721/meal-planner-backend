@@ -28,7 +28,7 @@ Successfully dockerized the Golang backend to solve PostgreSQL installation issu
 1. **Dockerfile** (Production)
    - Location: `C:\Users\mishr\myApp\backend\Dockerfile`
    - Multi-stage build (builder + runtime)
-   - Base: golang:1.21-alpine (builder), alpine:latest (runtime)
+   - Base: golang:1.26-alpine (builder), alpine:latest (runtime)
    - Size: ~15-20 MB final image
    - Features: Non-root user, health checks, optimized binary
 
@@ -249,7 +249,6 @@ Defined in `docker-compose.yml`:
 - DATABASE_URL: Connection string with 'postgres' hostname
 - JWT_SECRET: Token signing key
 - JWT_EXPIRATION_HOURS: 24
-- JWT_REFRESH_DAYS: 30
 - BCRYPT_COST: 12
 - FRONTEND_URL: http://localhost:3000
 - RATE_LIMIT_ENABLED: true

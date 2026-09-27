@@ -1,3 +1,4 @@
+// Package middleware provides the Gin middleware used by the API.
 package middleware
 
 import (
@@ -5,8 +6,15 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/meal-planner/backend/internal/config"
 	"github.com/meal-planner/backend/internal/utils"
+)
+
+// Gin context keys set by AuthMiddleware.
+const (
+	ContextKeyUserID = "userID"
+	ContextKeyEmail  = "email"
 )
 
 // AuthMiddleware validates JWT tokens
@@ -45,18 +53,22 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 		}
 
 		// Set user info in context
-		c.Set("userID", claims.UserID)
-		c.Set("email", claims.Email)
+		c.Set(ContextKeyUserID, claims.UserID)
+		c.Set(ContextKeyEmail, claims.Email)
 
 		c.Next()
 	}
 }
 
-// GetUserID retrieves the user ID from the context
+// GetUserID retrieves the authenticated user's ID set by AuthMiddleware.
 func GetUserID(c *gin.Context) (string, bool) {
-	userID, exists := c.Get("userID")
+	value, exists := c.Get(ContextKeyUserID)
 	if !exists {
 		return "", false
 	}
-	return userID.(string), true
+	userID, ok := value.(string)
+	if !ok || userID == "" {
+		return "", false
+	}
+	return userID, true
 }

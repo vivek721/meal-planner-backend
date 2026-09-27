@@ -70,7 +70,7 @@ psql --version
 ### 3. Install Air (optional, for hot reload)
 
 ```bash
-go install github.com/cosmtrek/air@latest
+go install github.com/air-verse/air@latest
 ```
 
 Make sure `$GOPATH/bin` is in your PATH:
@@ -269,7 +269,7 @@ go mod tidy
 **Solutions:**
 1. Install air:
    ```bash
-   go install github.com/cosmtrek/air@latest
+   go install github.com/air-verse/air@latest
    ```
 
 2. Add to PATH:

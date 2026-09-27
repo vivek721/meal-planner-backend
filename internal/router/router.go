@@ -1,19 +1,26 @@
+// Package router wires middleware, handlers and routes into a Gin engine.
 package router
 
 import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/meal-planner/backend/internal/config"
 	"github.com/meal-planner/backend/internal/handlers"
 	"github.com/meal-planner/backend/internal/middleware"
 	"github.com/meal-planner/backend/internal/repository"
 	"github.com/meal-planner/backend/internal/services"
-	"gorm.io/gorm"
 )
 
-// Setup initializes and configures the router
+// Setup initializes and configures the router backed by the given database.
 func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
+	return New(repository.NewUserRepository(db), cfg)
+}
+
+// New builds the router on top of an arbitrary user repository.
+func New(userRepo repository.UserRepository, cfg *config.Config) *gin.Engine {
 	// Set Gin mode based on environment
 	if cfg.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
@@ -29,7 +36,7 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
-			"status": "healthy",
+			"status":  "healthy",
 			"service": "meal-planner-api",
 		})
 	})
@@ -42,22 +49,19 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			"endpoints": gin.H{
 				"health": "/health",
 				"auth": gin.H{
-					"register": "POST /api/auth/register",
-					"login": "POST /api/auth/login",
-					"refresh": "POST /api/auth/refresh",
-					"me": "GET /api/auth/me (protected)",
-					"logout": "POST /api/auth/logout (protected)",
-					"profile": "PUT /api/auth/profile (protected)",
-					"password": "PUT /api/auth/password (protected)",
-					"onboarding": "POST /api/auth/onboarding/complete (protected)",
+					"register":    "POST /api/auth/register",
+					"login":       "POST /api/auth/login",
+					"refresh":     "POST /api/auth/refresh",
+					"me":          "GET /api/auth/me (protected)",
+					"logout":      "POST /api/auth/logout (protected)",
+					"profile":     "PUT /api/auth/profile (protected)",
+					"password":    "PUT /api/auth/password (protected)",
+					"onboarding":  "POST /api/auth/onboarding/complete (protected)",
 					"preferences": "PUT /api/auth/preferences (protected)",
 				},
 			},
 		})
 	})
-
-	// Initialize repositories
-	userRepo := repository.NewUserRepository(db)
 
 	// Initialize services
 	authService := services.NewAuthService(userRepo, cfg)
@@ -80,16 +84,14 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			// Protected auth routes
 			protected := auth.Group("")
 			protected.Use(middleware.AuthMiddleware(cfg))
-			{
-				protected.GET("/me", authHandler.GetMe)
-				protected.POST("/logout", authHandler.Logout)
-				protected.PUT("/profile", userHandler.UpdateProfile)
-				protected.PUT("/password", userHandler.ChangePassword)
-				protected.PUT("/preferences", userHandler.UpdatePreferences)
+			protected.GET("/me", userHandler.GetMe)
+			protected.POST("/logout", authHandler.Logout)
+			protected.PUT("/profile", userHandler.UpdateProfile)
+			protected.PUT("/password", userHandler.ChangePassword)
+			protected.PUT("/preferences", userHandler.UpdatePreferences)
 
-				// Onboarding
-				protected.POST("/onboarding/complete", userHandler.CompleteOnboarding)
-			}
+			// Onboarding
+			protected.POST("/onboarding/complete", userHandler.CompleteOnboarding)
 		}
 	}
 

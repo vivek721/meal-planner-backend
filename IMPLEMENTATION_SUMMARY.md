@@ -313,7 +313,6 @@ DATABASE_URL=postgresql://user:pass@localhost:5432/meal_planner?sslmode=disable
 # JWT
 JWT_SECRET=your-secret-key-min-32-chars
 JWT_EXPIRATION_HOURS=24
-JWT_REFRESH_DAYS=30
 
 # Security
 BCRYPT_COST=12
