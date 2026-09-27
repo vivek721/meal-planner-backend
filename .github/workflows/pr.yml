@@ -14,12 +14,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: PR Details
+        # Pass PR metadata through env so attacker-controlled values (title, branch name)
+        # are never interpolated into the shell script.
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_BASE: ${{ github.event.pull_request.base.ref }}
+          PR_HEAD: ${{ github.event.pull_request.head.ref }}
         run: |
-          echo "PR #${{ github.event.pull_request.number }}"
-          echo "Title: ${{ github.event.pull_request.title }}"
-          echo "Author: ${{ github.event.pull_request.user.login }}"
-          echo "Base: ${{ github.event.pull_request.base.ref }}"
-          echo "Head: ${{ github.event.pull_request.head.ref }}"
+          echo "PR #${PR_NUMBER}"
+          echo "Title: ${PR_TITLE}"
+          echo "Author: ${PR_AUTHOR}"
+          echo "Base: ${PR_BASE}"
+          echo "Head: ${PR_HEAD}"
 
   changed-files:
     name: Check Changed Files
