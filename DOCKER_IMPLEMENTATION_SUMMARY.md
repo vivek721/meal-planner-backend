@@ -249,7 +249,6 @@ Defined in `docker-compose.yml`:
 - DATABASE_URL: Connection string with 'postgres' hostname
 - JWT_SECRET: Token signing key
 - JWT_EXPIRATION_HOURS: 24
-- JWT_REFRESH_DAYS: 30
 - BCRYPT_COST: 12
 - FRONTEND_URL: http://localhost:3000
 - RATE_LIMIT_ENABLED: true

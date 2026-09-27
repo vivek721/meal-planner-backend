@@ -23,7 +23,6 @@ type Config struct {
 	// JWT configuration
 	JWTSecret          string
 	JWTExpirationHours int
-	JWTRefreshDays     int
 
 	// Security configuration
 	BcryptCost int
@@ -55,7 +54,6 @@ func Load() *Config {
 		// JWT
 		JWTSecret:          getEnv("JWT_SECRET", "your-secret-key-change-this-in-production"),
 		JWTExpirationHours: getEnvAsInt("JWT_EXPIRATION_HOURS", 24),
-		JWTRefreshDays:     getEnvAsInt("JWT_REFRESH_DAYS", 30),
 
 		// Security
 		BcryptCost: getEnvAsInt("BCRYPT_COST", 12),
@@ -74,11 +72,6 @@ func Load() *Config {
 // GetJWTExpiration returns the JWT token expiration duration
 func (c *Config) GetJWTExpiration() time.Duration {
 	return time.Hour * time.Duration(c.JWTExpirationHours)
-}
-
-// GetJWTRefreshExpiration returns the refresh token expiration duration
-func (c *Config) GetJWTRefreshExpiration() time.Duration {
-	return time.Hour * 24 * time.Duration(c.JWTRefreshDays)
 }
 
 // IsDevelopment checks if the environment is development
