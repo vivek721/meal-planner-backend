@@ -102,3 +102,10 @@ func TestPasswordHashingRoundTrip(t *testing.T) {
 		})
 	}
 }
+
+func TestHashPassword_InvalidCost(t *testing.T) {
+	// bcrypt rejects costs above bcrypt.MaxCost (31).
+	if _, err := HashPassword("Password1!", 32); err == nil {
+		t.Error("HashPassword(cost=32) error = nil, want error")
+	}
+}

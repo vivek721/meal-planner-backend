@@ -1,0 +1,104 @@
+package config
+
+import (
+	"reflect"
+	"testing"
+	"time"
+)
+
+func TestLoad_Defaults(t *testing.T) {
+	for _, key := range []string{
+		"PORT", "ENVIRONMENT", "DATABASE_URL", "DB_HOST", "JWT_SECRET",
+		"JWT_EXPIRATION_HOURS", "BCRYPT_COST", "FRONTEND_URL",
+		"RATE_LIMIT_ENABLED", "RATE_LIMIT_PER_MIN",
+	} {
+		t.Setenv(key, "")
+	}
+
+	cfg := Load()
+
+	checks := []struct {
+		name      string
+		got, want any
+	}{
+		{"Port", cfg.Port, "3001"},
+		{"Environment", cfg.Environment, "development"},
+		{"DatabaseURL", cfg.DatabaseURL, ""},
+		{"DatabaseHost", cfg.DatabaseHost, "localhost"},
+		{"JWTExpirationHours", cfg.JWTExpirationHours, 24},
+		{"BcryptCost", cfg.BcryptCost, 12},
+		{"CORSAllowedOrigins", cfg.CORSAllowedOrigins, []string{"http://localhost:3000"}},
+		{"RateLimitEnabled", cfg.RateLimitEnabled, true},
+		{"RateLimitPerMin", cfg.RateLimitPerMin, 100},
+	}
+	for _, c := range checks {
+		if !reflect.DeepEqual(c.got, c.want) {
+			t.Errorf("%s = %v, want %v", c.name, c.got, c.want)
+		}
+	}
+}
+
+func TestLoad_FromEnvironment(t *testing.T) {
+	t.Setenv("PORT", "8080")
+	t.Setenv("ENVIRONMENT", "production")
+	t.Setenv("DATABASE_URL", "postgres://u:p@db:5432/x")
+	t.Setenv("JWT_SECRET", "from-env")
+	t.Setenv("JWT_EXPIRATION_HOURS", "2")
+	t.Setenv("BCRYPT_COST", "4")
+	t.Setenv("FRONTEND_URL", "https://app.example.com")
+	t.Setenv("RATE_LIMIT_ENABLED", "false")
+
+	cfg := Load()
+
+	if cfg.Port != "8080" || cfg.Environment != "production" || cfg.DatabaseURL != "postgres://u:p@db:5432/x" {
+		t.Errorf("string settings not read from env: %+v", cfg)
+	}
+	if cfg.JWTSecret != "from-env" || cfg.JWTExpirationHours != 2 || cfg.BcryptCost != 4 {
+		t.Errorf("auth settings not read from env: %+v", cfg)
+	}
+	if !reflect.DeepEqual(cfg.CORSAllowedOrigins, []string{"https://app.example.com"}) {
+		t.Errorf("CORSAllowedOrigins = %v", cfg.CORSAllowedOrigins)
+	}
+	if cfg.RateLimitEnabled {
+		t.Error("RateLimitEnabled = true, want false")
+	}
+}
+
+func TestLoad_InvalidNumbersFallBackToDefaults(t *testing.T) {
+	t.Setenv("JWT_EXPIRATION_HOURS", "a day")
+	t.Setenv("RATE_LIMIT_ENABLED", "maybe")
+
+	cfg := Load()
+
+	if cfg.JWTExpirationHours != 24 {
+		t.Errorf("JWTExpirationHours = %d, want default 24", cfg.JWTExpirationHours)
+	}
+	if !cfg.RateLimitEnabled {
+		t.Error("RateLimitEnabled = false, want default true")
+	}
+}
+
+func TestGetJWTExpiration(t *testing.T) {
+	cfg := &Config{JWTExpirationHours: 3}
+	if got := cfg.GetJWTExpiration(); got != 3*time.Hour {
+		t.Errorf("GetJWTExpiration() = %v, want 3h", got)
+	}
+}
+
+func TestEnvironmentHelpers(t *testing.T) {
+	tests := []struct {
+		env       string
+		dev, prod bool
+	}{
+		{"development", true, false},
+		{"production", false, true},
+		{"test", false, false},
+	}
+	for _, tt := range tests {
+		cfg := &Config{Environment: tt.env}
+		if cfg.IsDevelopment() != tt.dev || cfg.IsProduction() != tt.prod {
+			t.Errorf("%s: IsDevelopment=%v IsProduction=%v, want %v %v",
+				tt.env, cfg.IsDevelopment(), cfg.IsProduction(), tt.dev, tt.prod)
+		}
+	}
+}
