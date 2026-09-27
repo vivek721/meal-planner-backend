@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/meal-planner/backend/internal/testutil"
 	"github.com/meal-planner/backend/internal/utils"
 )
 
@@ -35,7 +36,7 @@ func TestAccountLockedError(t *testing.T) {
 }
 
 func TestLogin_LockedAccountMessage(t *testing.T) {
-	repo := newFakeUserRepo()
+	repo := testutil.NewUserRepo()
 	user := seedUser(repo, "locked@example.com")
 	lockedUntil := time.Now().Add(3*time.Minute + 30*time.Second)
 	user.AccountLockedUntil = &lockedUntil
@@ -54,7 +55,7 @@ func TestLogin_LockedAccountMessage(t *testing.T) {
 }
 
 func TestLogin_LocksAfterMaxAttempts(t *testing.T) {
-	repo := newFakeUserRepo()
+	repo := testutil.NewUserRepo()
 	seedUser(repo, "user@example.com")
 	svc := NewAuthService(repo, testConfig())
 
@@ -82,7 +83,7 @@ func TestLogin_LocksAfterMaxAttempts(t *testing.T) {
 }
 
 func TestLogin_Success(t *testing.T) {
-	repo := newFakeUserRepo()
+	repo := testutil.NewUserRepo()
 	user := seedUser(repo, "user@example.com")
 	user.LoginAttempts = 2
 	svc := NewAuthService(repo, testConfig())
@@ -107,21 +108,21 @@ func TestLogin_Success(t *testing.T) {
 }
 
 func TestLogin_Errors(t *testing.T) {
-	repo := newFakeUserRepo()
+	repo := testutil.NewUserRepo()
 	svc := NewAuthService(repo, testConfig())
 
 	if _, _, err := svc.Login("nobody@example.com", testPassword); !errors.Is(err, ErrInvalidCredentials) {
 		t.Errorf("unknown user: error = %v, want ErrInvalidCredentials", err)
 	}
 
-	repo.err = errRepo
+	repo.Err = errRepo
 	if _, _, err := svc.Login("nobody@example.com", testPassword); !errors.Is(err, errRepo) {
 		t.Errorf("repo failure: error = %v, want errRepo", err)
 	}
 }
 
 func TestRegister(t *testing.T) {
-	repo := newFakeUserRepo()
+	repo := testutil.NewUserRepo()
 	svc := NewAuthService(repo, testConfig())
 
 	user, token, err := svc.Register(" New@Example.com ", testPassword, "New User")
@@ -156,14 +157,14 @@ func TestRegister(t *testing.T) {
 		})
 	}
 
-	repo.err = errRepo
+	repo.Err = errRepo
 	if _, _, err := svc.Register("x@example.com", testPassword, ""); !errors.Is(err, errRepo) {
 		t.Errorf("repo failure: error = %v, want errRepo", err)
 	}
 }
 
 func TestRefreshToken(t *testing.T) {
-	svc := NewAuthService(newFakeUserRepo(), testConfig())
+	svc := NewAuthService(testutil.NewUserRepo(), testConfig())
 
 	token, err := utils.GenerateToken("user_1", "a@example.com", testSecret, time.Hour)
 	if err != nil {
@@ -187,7 +188,7 @@ func TestRefreshToken(t *testing.T) {
 }
 
 func TestValidateToken(t *testing.T) {
-	repo := newFakeUserRepo()
+	repo := testutil.NewUserRepo()
 	user := seedUser(repo, "user@example.com")
 	svc := NewAuthService(repo, testConfig())
 
