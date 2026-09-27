@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -35,6 +36,38 @@ type ChangePasswordRequest struct {
 type UpdatePreferencesRequest struct {
 	Theme         string `json:"theme"`
 	Notifications *bool  `json:"notifications"`
+}
+
+// GetMe returns the current authenticated user. It relies on the user ID that
+// middleware.AuthMiddleware stored in the context after validating the token.
+// GET /api/auth/me
+func (h *UserHandler) GetMe(c *gin.Context) {
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "unauthorized",
+		})
+		return
+	}
+
+	user, err := h.userService.GetUserByID(userID)
+	if err != nil {
+		if errors.Is(err, services.ErrUserNotFound) {
+			// Valid token for a user that no longer exists.
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "invalid token",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to get user",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"user": user.ToPublicUser(),
+	})
 }
 
 // UpdateProfile updates the user profile

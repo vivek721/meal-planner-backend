@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/meal-planner/backend/internal/middleware"
 	"github.com/meal-planner/backend/internal/services"
 )
 
@@ -148,39 +147,6 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"token": newToken,
-	})
-}
-
-// GetMe returns the current authenticated user
-// GET /api/auth/me
-func (h *AuthHandler) GetMe(c *gin.Context) {
-	userID, exists := middleware.GetUserID(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "unauthorized",
-		})
-		return
-	}
-
-	// Get user from token validation
-	token := c.GetHeader("Authorization")[7:] // Remove "Bearer "
-	user, err := h.authService.ValidateToken(token)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "invalid token",
-		})
-		return
-	}
-
-	if user.ID != userID {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "token user mismatch",
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"user": user.ToPublicUser(),
 	})
 }
 

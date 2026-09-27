@@ -12,8 +12,13 @@ import (
 	"gorm.io/gorm"
 )
 
-// Setup initializes and configures the router
+// Setup initializes and configures the router backed by the given database.
 func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
+	return New(repository.NewUserRepository(db), cfg)
+}
+
+// New builds the router on top of an arbitrary user repository.
+func New(userRepo repository.UserRepository, cfg *config.Config) *gin.Engine {
 	// Set Gin mode based on environment
 	if cfg.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
@@ -56,9 +61,6 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 		})
 	})
 
-	// Initialize repositories
-	userRepo := repository.NewUserRepository(db)
-
 	// Initialize services
 	authService := services.NewAuthService(userRepo, cfg)
 	userService := services.NewUserService(userRepo, cfg)
@@ -81,7 +83,7 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			protected := auth.Group("")
 			protected.Use(middleware.AuthMiddleware(cfg))
 			{
-				protected.GET("/me", authHandler.GetMe)
+				protected.GET("/me", userHandler.GetMe)
 				protected.POST("/logout", authHandler.Logout)
 				protected.PUT("/profile", userHandler.UpdateProfile)
 				protected.PUT("/password", userHandler.ChangePassword)
