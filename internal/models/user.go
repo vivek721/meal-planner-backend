@@ -42,7 +42,11 @@ type LoginAttemptInfo struct {
 // BeforeCreate hook to generate ID if not set
 func (u *User) BeforeCreate(tx *gorm.DB) error {
 	if u.ID == "" {
-		u.ID = generateID("user")
+		id, err := generateID("user")
+		if err != nil {
+			return err
+		}
+		u.ID = id
 	}
 	if u.CreatedAt.IsZero() {
 		u.CreatedAt = time.Now()
