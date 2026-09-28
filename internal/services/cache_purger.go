@@ -24,7 +24,11 @@ func PurgeExpiredCache(repo repository.CacheRepository, retention time.Duration,
 		log.Printf("mealdb cache: purge failed: %v", err)
 		return
 	}
-	log.Printf("mealdb cache: purged %d rows older than %s", n, cutoff)
+	row := "row"
+	if n != 1 {
+		row = "rows"
+	}
+	log.Printf("mealdb cache: purged %d %s older than %s", n, row, cutoff.UTC().Format(time.RFC3339))
 }
 
 // PurgeExpiredCacheLoop runs PurgeExpiredCache immediately and then again

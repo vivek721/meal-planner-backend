@@ -41,7 +41,9 @@ func TestPurgeExpiredCacheDeletesOnlyRowsOlderThanRetention(t *testing.T) {
 
 func TestPurgeExpiredCacheLogsCount(t *testing.T) {
 	repo := testutil.NewCacheRepo()
-	now := time.Date(2026, 9, 28, 12, 0, 0, 0, time.UTC)
+	// time.Now() (unlike time.Date) carries a monotonic reading, so this also
+	// proves the log line doesn't leak it (no " m=..." suffix).
+	now := time.Now()
 	retention := 30 * 24 * time.Hour
 	_ = repo.Upsert(&models.CachedResponse{Key: "ancient", ExpiresAt: now.Add(-31 * 24 * time.Hour)})
 
@@ -52,8 +54,13 @@ func TestPurgeExpiredCacheLogsCount(t *testing.T) {
 
 	PurgeExpiredCache(repo, retention, now)
 
-	if got := buf.String(); !strings.Contains(got, "mealdb cache: purged 1 rows older than") {
-		t.Errorf("log output = %q, want it to mention the purged count", got)
+	got := buf.String()
+	wantCutoff := now.Add(-retention).UTC().Format(time.RFC3339)
+	if !strings.Contains(got, "mealdb cache: purged 1 row older than "+wantCutoff) {
+		t.Errorf("log output = %q, want it to mention the purged count and RFC3339 cutoff %q", got, wantCutoff)
+	}
+	if strings.Contains(got, " m=") {
+		t.Errorf("log output = %q, must not leak the monotonic clock reading", got)
 	}
 }
 
