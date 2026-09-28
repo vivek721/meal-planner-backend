@@ -35,6 +35,12 @@ type Config struct {
 	// Rate limiting
 	RateLimitEnabled bool
 	RateLimitPerMin  int
+
+	// TheMealDB recipe source
+	MealDBBaseURL   string
+	MealDBTimeout   time.Duration
+	MealDBDetailTTL time.Duration
+	MealDBSearchTTL time.Duration
 }
 
 // Load loads configuration from environment variables
@@ -68,6 +74,12 @@ func Load() *Config {
 		// Rate limiting
 		RateLimitEnabled: getEnvAsBool("RATE_LIMIT_ENABLED", true),
 		RateLimitPerMin:  getEnvAsInt("RATE_LIMIT_PER_MIN", 100),
+
+		// TheMealDB
+		MealDBBaseURL:   getEnv("MEALDB_BASE_URL", "https://www.themealdb.com/api/json/v1/1"),
+		MealDBTimeout:   time.Duration(getEnvAsInt("MEALDB_TIMEOUT_SECONDS", 5)) * time.Second,
+		MealDBDetailTTL: time.Duration(getEnvAsInt("MEALDB_DETAIL_TTL_HOURS", 168)) * time.Hour,
+		MealDBSearchTTL: time.Duration(getEnvAsInt("MEALDB_SEARCH_TTL_HOURS", 24)) * time.Hour,
 	}
 }
 

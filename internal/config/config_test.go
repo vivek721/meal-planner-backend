@@ -102,3 +102,34 @@ func TestEnvironmentHelpers(t *testing.T) {
 		}
 	}
 }
+
+func TestLoadMealDBDefaults(t *testing.T) {
+	for _, k := range []string{"MEALDB_BASE_URL", "MEALDB_TIMEOUT_SECONDS", "MEALDB_DETAIL_TTL_HOURS", "MEALDB_SEARCH_TTL_HOURS"} {
+		t.Setenv(k, "")
+	}
+	cfg := Load()
+	if cfg.MealDBBaseURL != "https://www.themealdb.com/api/json/v1/1" {
+		t.Errorf("MealDBBaseURL = %q", cfg.MealDBBaseURL)
+	}
+	if cfg.MealDBTimeout != 5*time.Second {
+		t.Errorf("MealDBTimeout = %v", cfg.MealDBTimeout)
+	}
+	if cfg.MealDBDetailTTL != 168*time.Hour {
+		t.Errorf("MealDBDetailTTL = %v", cfg.MealDBDetailTTL)
+	}
+	if cfg.MealDBSearchTTL != 24*time.Hour {
+		t.Errorf("MealDBSearchTTL = %v", cfg.MealDBSearchTTL)
+	}
+}
+
+func TestLoadMealDBOverrides(t *testing.T) {
+	t.Setenv("MEALDB_BASE_URL", "http://mealdb.test/api")
+	t.Setenv("MEALDB_TIMEOUT_SECONDS", "2")
+	t.Setenv("MEALDB_DETAIL_TTL_HOURS", "1")
+	t.Setenv("MEALDB_SEARCH_TTL_HOURS", "3")
+	cfg := Load()
+	if cfg.MealDBBaseURL != "http://mealdb.test/api" || cfg.MealDBTimeout != 2*time.Second ||
+		cfg.MealDBDetailTTL != time.Hour || cfg.MealDBSearchTTL != 3*time.Hour {
+		t.Errorf("overrides not applied: %+v", cfg)
+	}
+}
