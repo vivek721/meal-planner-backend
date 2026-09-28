@@ -142,6 +142,32 @@ func TestLoadMealDBNonPositiveFallBackToDefaults(t *testing.T) {
 	}
 }
 
+func TestLoadCacheRetentionDefault(t *testing.T) {
+	t.Setenv("MEALDB_CACHE_RETENTION_DAYS", "")
+	cfg := Load()
+	if cfg.MealDBCacheRetention != 30*24*time.Hour {
+		t.Errorf("MealDBCacheRetention = %v, want default 30 days", cfg.MealDBCacheRetention)
+	}
+}
+
+func TestLoadCacheRetentionOverride(t *testing.T) {
+	t.Setenv("MEALDB_CACHE_RETENTION_DAYS", "7")
+	cfg := Load()
+	if cfg.MealDBCacheRetention != 7*24*time.Hour {
+		t.Errorf("MealDBCacheRetention = %v, want 7 days", cfg.MealDBCacheRetention)
+	}
+}
+
+func TestLoadCacheRetentionNonPositiveFallsBackToDefault(t *testing.T) {
+	for _, bad := range []string{"0", "-3"} {
+		t.Setenv("MEALDB_CACHE_RETENTION_DAYS", bad)
+		cfg := Load()
+		if cfg.MealDBCacheRetention != 30*24*time.Hour {
+			t.Errorf("MEALDB_CACHE_RETENTION_DAYS=%s: MealDBCacheRetention = %v, want default 30 days", bad, cfg.MealDBCacheRetention)
+		}
+	}
+}
+
 func TestLoadMealDBOverrides(t *testing.T) {
 	t.Setenv("MEALDB_BASE_URL", "http://mealdb.test/api")
 	t.Setenv("MEALDB_TIMEOUT_SECONDS", "2")

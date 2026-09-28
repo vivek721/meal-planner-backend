@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -15,6 +16,9 @@ type CacheRepository interface {
 	Get(key string) (*models.CachedResponse, error)
 	// Upsert inserts the entry or replaces the existing one with the same key.
 	Upsert(entry *models.CachedResponse) error
+	// DeleteExpiredBefore deletes entries whose ExpiresAt is before cutoff and
+	// returns how many rows were removed.
+	DeleteExpiredBefore(cutoff time.Time) (int64, error)
 }
 
 type cacheRepository struct {
@@ -40,4 +44,9 @@ func (r *cacheRepository) Get(key string) (*models.CachedResponse, error) {
 
 func (r *cacheRepository) Upsert(entry *models.CachedResponse) error {
 	return r.db.Clauses(clause.OnConflict{UpdateAll: true}).Create(entry).Error
+}
+
+func (r *cacheRepository) DeleteExpiredBefore(cutoff time.Time) (int64, error) {
+	result := r.db.Where("expires_at < ?", cutoff).Delete(&models.CachedResponse{})
+	return result.RowsAffected, result.Error
 }

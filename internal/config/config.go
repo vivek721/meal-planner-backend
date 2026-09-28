@@ -37,10 +37,11 @@ type Config struct {
 	RateLimitPerMin  int
 
 	// TheMealDB recipe source
-	MealDBBaseURL   string
-	MealDBTimeout   time.Duration
-	MealDBDetailTTL time.Duration
-	MealDBSearchTTL time.Duration
+	MealDBBaseURL        string
+	MealDBTimeout        time.Duration
+	MealDBDetailTTL      time.Duration
+	MealDBSearchTTL      time.Duration
+	MealDBCacheRetention time.Duration
 }
 
 // Load loads configuration from environment variables
@@ -80,6 +81,7 @@ func Load() *Config {
 		MealDBTimeout:   time.Duration(getEnvAsPositiveInt("MEALDB_TIMEOUT_SECONDS", 5)) * time.Second,
 		MealDBDetailTTL: time.Duration(getEnvAsPositiveInt("MEALDB_DETAIL_TTL_HOURS", 168)) * time.Hour,
 		MealDBSearchTTL: time.Duration(getEnvAsPositiveInt("MEALDB_SEARCH_TTL_HOURS", 24)) * time.Hour,
+		MealDBCacheRetention: time.Duration(getEnvAsPositiveInt("MEALDB_CACHE_RETENTION_DAYS", 30)) * 24 * time.Hour,
 	}
 }
 
