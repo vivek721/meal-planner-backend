@@ -40,11 +40,11 @@ func main() {
 	r := router.Setup(db, cfg)
 
 	// Purge long-expired mealdb_cache rows once at startup and then every
-	// CachePurgeInterval, stopping when the process shuts down.
-	purgeCtx, stopPurge := context.WithCancel(context.Background())
-	defer stopPurge()
+	// CachePurgeInterval. The server has no graceful-shutdown path today, so
+	// the loop simply runs for the lifetime of the process; PurgeExpiredCacheLoop
+	// itself supports stopping via context cancellation (see its tests).
 	go services.PurgeExpiredCacheLoop(
-		purgeCtx, repository.NewCacheRepository(db), cfg.MealDBCacheRetention, time.Now, services.CachePurgeInterval,
+		context.Background(), repository.NewCacheRepository(db), cfg.MealDBCacheRetention, time.Now, services.CachePurgeInterval,
 	)
 
 	// Start server
