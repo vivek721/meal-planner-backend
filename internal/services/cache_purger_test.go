@@ -75,7 +75,11 @@ func TestPurgeExpiredCacheRepoErrorIsLoggedNotFatal(t *testing.T) {
 
 // signalingRepo wraps a CacheRepo and signals on calls after every
 // DeleteExpiredBefore call, so tests can observe loop iterations without
-// racing on the underlying map.
+// racing on the underlying map. The send is non-blocking: the test only
+// needs to observe that a call happened at least once, and with a fast
+// ticker the loop can run far more iterations than the channel's buffer
+// before the test drains it or cancels, so a blocking send could wedge the
+// purge goroutine (and then only fail via the test's own timeout).
 type signalingRepo struct {
 	*testutil.CacheRepo
 	calls chan struct{}
@@ -83,7 +87,10 @@ type signalingRepo struct {
 
 func (r *signalingRepo) DeleteExpiredBefore(cutoff time.Time) (int64, error) {
 	n, err := r.CacheRepo.DeleteExpiredBefore(cutoff)
-	r.calls <- struct{}{}
+	select {
+	case r.calls <- struct{}{}:
+	default:
+	}
 	return n, err
 }
 
