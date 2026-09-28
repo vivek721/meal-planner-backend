@@ -84,7 +84,7 @@ func (h *RecipeHandler) Search(c *gin.Context) {
 
 func recipeError(c *gin.Context, err error) {
 	switch {
-	case errors.Is(err, services.ErrInvalidSearch):
+	case errors.Is(err, services.ErrInvalidSearch), errors.Is(err, services.ErrSearchTooLong):
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	case errors.Is(err, services.ErrRecipeNotFound):
 		c.JSON(http.StatusNotFound, gin.H{"error": msgRecipeNotFound})

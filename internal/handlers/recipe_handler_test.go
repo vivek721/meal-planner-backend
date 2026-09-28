@@ -3,6 +3,8 @@ package handlers_test
 import (
 	"errors"
 	"net/http"
+	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/meal-planner/backend/internal/mealdb"
@@ -82,6 +84,24 @@ func TestSearchRecipes(t *testing.T) {
 		if code, _ := s.do(t, http.MethodGet, path, nil, token); code != http.StatusBadRequest {
 			t.Errorf("%s: %d, want 400", path, code)
 		}
+	}
+}
+
+func TestSearchRecipesRejectsOverlongParams(t *testing.T) {
+	s := newTestServer(t)
+	_, token := s.seedUser(t, "long@example.com")
+	long := strings.Repeat("a", 101)
+
+	path := "/api/recipes?q=" + url.QueryEscape(long)
+	code, resp := s.do(t, http.MethodGet, path, nil, token)
+	if code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", code)
+	}
+	if resp["error"] != "search parameters must be at most 100 characters" {
+		t.Errorf("error = %v", resp["error"])
+	}
+	if s.mealdb.Calls != 0 {
+		t.Errorf("overlong search must not reach upstream (calls=%d)", s.mealdb.Calls)
 	}
 }
 

@@ -122,6 +122,26 @@ func TestLoadMealDBDefaults(t *testing.T) {
 	}
 }
 
+func TestLoadMealDBNonPositiveFallBackToDefaults(t *testing.T) {
+	for _, bad := range []string{"0", "-3"} {
+		t.Setenv("MEALDB_TIMEOUT_SECONDS", bad)
+		t.Setenv("MEALDB_DETAIL_TTL_HOURS", bad)
+		t.Setenv("MEALDB_SEARCH_TTL_HOURS", bad)
+
+		cfg := Load()
+
+		if cfg.MealDBTimeout != 5*time.Second {
+			t.Errorf("MEALDB_TIMEOUT_SECONDS=%s: MealDBTimeout = %v, want default 5s", bad, cfg.MealDBTimeout)
+		}
+		if cfg.MealDBDetailTTL != 168*time.Hour {
+			t.Errorf("MEALDB_DETAIL_TTL_HOURS=%s: MealDBDetailTTL = %v, want default 168h", bad, cfg.MealDBDetailTTL)
+		}
+		if cfg.MealDBSearchTTL != 24*time.Hour {
+			t.Errorf("MEALDB_SEARCH_TTL_HOURS=%s: MealDBSearchTTL = %v, want default 24h", bad, cfg.MealDBSearchTTL)
+		}
+	}
+}
+
 func TestLoadMealDBOverrides(t *testing.T) {
 	t.Setenv("MEALDB_BASE_URL", "http://mealdb.test/api")
 	t.Setenv("MEALDB_TIMEOUT_SECONDS", "2")

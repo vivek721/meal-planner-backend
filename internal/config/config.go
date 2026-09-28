@@ -77,9 +77,9 @@ func Load() *Config {
 
 		// TheMealDB
 		MealDBBaseURL:   getEnv("MEALDB_BASE_URL", "https://www.themealdb.com/api/json/v1/1"),
-		MealDBTimeout:   time.Duration(getEnvAsInt("MEALDB_TIMEOUT_SECONDS", 5)) * time.Second,
-		MealDBDetailTTL: time.Duration(getEnvAsInt("MEALDB_DETAIL_TTL_HOURS", 168)) * time.Hour,
-		MealDBSearchTTL: time.Duration(getEnvAsInt("MEALDB_SEARCH_TTL_HOURS", 24)) * time.Hour,
+		MealDBTimeout:   time.Duration(getEnvAsPositiveInt("MEALDB_TIMEOUT_SECONDS", 5)) * time.Second,
+		MealDBDetailTTL: time.Duration(getEnvAsPositiveInt("MEALDB_DETAIL_TTL_HOURS", 168)) * time.Hour,
+		MealDBSearchTTL: time.Duration(getEnvAsPositiveInt("MEALDB_SEARCH_TTL_HOURS", 24)) * time.Hour,
 	}
 }
 
@@ -109,6 +109,15 @@ func getEnvAsInt(key string, defaultValue int) int {
 	valueStr := os.Getenv(key)
 	if value, err := strconv.Atoi(valueStr); err == nil {
 		return value
+	}
+	return defaultValue
+}
+
+// getEnvAsPositiveInt is like getEnvAsInt but falls back to defaultValue when
+// the parsed value is not positive.
+func getEnvAsPositiveInt(key string, defaultValue int) int {
+	if v := getEnvAsInt(key, defaultValue); v > 0 {
+		return v
 	}
 	return defaultValue
 }

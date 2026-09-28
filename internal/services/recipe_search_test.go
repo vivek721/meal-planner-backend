@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
+	"strings"
 	"testing"
 
 	"github.com/meal-planner/backend/internal/mealdb"
@@ -91,6 +93,51 @@ func TestSearchPaging(t *testing.T) {
 	p, _ = f.svc.Search(ctx, RecipeQuery{Category: "Beef", Page: 9})
 	if p.Recipes == nil || len(p.Recipes) != 0 || p.Total != 60 {
 		t.Errorf("page past the end must be an empty non-nil list: %+v", p)
+	}
+}
+
+func TestSearchPagingHugePageDoesNotPanic(t *testing.T) {
+	f := newRecipeFixture(t)
+	refs := make([]mealdb.MealRef, 0, 60)
+	for i := 1; i <= 60; i++ {
+		refs = append(refs, ref(fmt.Sprint(i)))
+	}
+	f.client.Filters["c=Beef"] = refs
+	ctx := context.Background()
+
+	for _, page := range []int{math.MaxInt, 384307168202282327} {
+		p, err := f.svc.Search(ctx, RecipeQuery{Category: "Beef", Page: page})
+		if err != nil {
+			t.Fatalf("page %d: unexpected error %v", page, err)
+		}
+		if p.Recipes == nil || len(p.Recipes) != 0 {
+			t.Errorf("page %d: Recipes = %+v, want empty non-nil", page, p.Recipes)
+		}
+		if p.Total != 60 || p.TotalPages != 3 || p.Page != page {
+			t.Errorf("page %d: Total=%d TotalPages=%d Page=%d, want Total=60 TotalPages=3 Page=%d",
+				page, p.Total, p.TotalPages, p.Page, page)
+		}
+	}
+}
+
+func TestSearchRejectsOverlongParams(t *testing.T) {
+	f := newRecipeFixture(t)
+	long := strings.Repeat("a", 101)
+	for _, q := range []RecipeQuery{
+		{Q: long}, {Category: long}, {Cuisine: long}, {Ingredient: long},
+	} {
+		if _, err := f.svc.Search(context.Background(), q); !errors.Is(err, ErrSearchTooLong) {
+			t.Errorf("%+v: err = %v, want ErrSearchTooLong", q, err)
+		}
+	}
+	if f.client.Calls != 0 {
+		t.Errorf("overlong search must not call upstream, calls = %d", f.client.Calls)
+	}
+
+	// Rune count, not byte count: 100 multi-byte runes must be accepted.
+	f.client.Filters["c="+strings.Repeat("é", 100)] = []mealdb.MealRef{ref("1")}
+	if _, err := f.svc.Search(context.Background(), RecipeQuery{Category: strings.Repeat("é", 100)}); err != nil {
+		t.Errorf("100 multi-byte runes must be accepted: %v", err)
 	}
 }
 

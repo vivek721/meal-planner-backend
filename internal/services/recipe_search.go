@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/meal-planner/backend/internal/mealdb"
 )
@@ -14,6 +15,11 @@ func (s *recipeService) Search(ctx context.Context, q RecipeQuery) (*RecipePage,
 	q.Ingredient = strings.TrimSpace(q.Ingredient)
 	if q.Q == "" && q.Category == "" && q.Cuisine == "" && q.Ingredient == "" {
 		return nil, ErrInvalidSearch
+	}
+	for _, v := range [...]string{q.Q, q.Category, q.Cuisine, q.Ingredient} {
+		if utf8.RuneCountInString(v) > maxSearchParamLength {
+			return nil, ErrSearchTooLong
+		}
 	}
 
 	var (
@@ -136,7 +142,12 @@ func paginate(all []RecipeSummary, page, limit int) *RecipePage {
 	}
 	total := len(all)
 	totalPages := (total + limit - 1) / limit
-	start := min((page-1)*limit, total)
+	if page > totalPages {
+		return &RecipePage{Recipes: []RecipeSummary{}, Total: total, Page: page, TotalPages: totalPages}
+	}
+	// page <= totalPages here, so (page-1)*limit < total: no overflow risk
+	// even for pathological page values, since we never multiply those.
+	start := (page - 1) * limit
 	end := min(start+limit, total)
 	recipes := make([]RecipeSummary, 0, end-start)
 	recipes = append(recipes, all[start:end]...)

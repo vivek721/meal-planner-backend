@@ -20,6 +20,7 @@ var (
 	ErrUpstreamUnavailable = errors.New("recipes are temporarily unavailable")
 	ErrRecipeNotFound      = errors.New("recipe not found")
 	ErrInvalidSearch       = errors.New("provide at least one of q, category, cuisine or ingredient")
+	ErrSearchTooLong       = errors.New("search parameters must be at most 100 characters")
 )
 
 // Paging limits for Search.
@@ -27,6 +28,10 @@ const (
 	defaultRecipeLimit = 24
 	maxRecipeLimit     = 50
 )
+
+// maxSearchParamLength is the maximum rune length accepted for any of q,
+// category, cuisine or ingredient, keeping cache keys bounded.
+const maxSearchParamLength = 100
 
 // RecipeCacheTTL sets how long cached TheMealDB results stay fresh.
 type RecipeCacheTTL struct {
@@ -96,6 +101,8 @@ func cached[T any](ctx context.Context, s *recipeService, key string, ttl time.D
 				return v, nil
 			}
 			stale = &v
+		} else {
+			log.Printf("recipe cache: decode %q: %v", key, jsonErr)
 		}
 	}
 

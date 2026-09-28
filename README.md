@@ -193,7 +193,8 @@ fetches from TheMealDB, caches the result, and returns it. Lookups, categories a
 cached for `MEALDB_DETAIL_TTL_HOURS` (default 7 days); searches and filters are cached for
 `MEALDB_SEARCH_TTL_HOURS` (default 24 hours). If TheMealDB is unreachable and a cache entry has
 expired, the stale entry is served rather than failing the request; if nothing is cached, the
-endpoint returns `503`.
+endpoint returns `503`. Search parameters (`q`, `category`, `cuisine`, `ingredient`) are limited to
+100 characters each; longer values return `400`.
 
 Recipe data and images from TheMealDB (themealdb.com). The public API key `1` is for development
 and educational use; a public production deployment should follow TheMealDB's supporter terms.

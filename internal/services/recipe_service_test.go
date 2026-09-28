@@ -1,9 +1,12 @@
 package services
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"log"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -115,6 +118,27 @@ func TestCorruptOrUnreadableCacheFallsThroughToFetch(t *testing.T) {
 	f.cache.Err = errors.New("db down")
 	if got, err := f.svc.Get(context.Background(), "52772"); err != nil || got.Name != "Teriyaki" {
 		t.Fatalf("cache read error must fall through to upstream: %+v, %v", got, err)
+	}
+}
+
+func TestCorruptCacheEntryIsLogged(t *testing.T) {
+	f := newRecipeFixture(t)
+	f.client.Meals["52772"] = teriyaki
+	f.cache.Entries["lookup:52772"] = &models.CachedResponse{
+		Key: "lookup:52772", Payload: `{not json`,
+		FetchedAt: f.now, ExpiresAt: f.now.Add(time.Hour),
+	}
+
+	var buf bytes.Buffer
+	orig := log.Writer()
+	log.SetOutput(&buf)
+	defer log.SetOutput(orig)
+
+	if _, err := f.svc.Get(context.Background(), "52772"); err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if got := buf.String(); !strings.Contains(got, `recipe cache: decode "lookup:52772"`) {
+		t.Errorf("log output = %q, want it to mention decode failure for the key", got)
 	}
 }
 
