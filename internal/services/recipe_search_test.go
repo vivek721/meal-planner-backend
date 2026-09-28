@@ -14,7 +14,7 @@ func ref(id string) mealdb.MealRef {
 }
 
 func ids(p *RecipePage) []string {
-	out := []string{}
+	out := make([]string, 0, len(p.Recipes))
 	for _, r := range p.Recipes {
 		out = append(out, r.ID)
 	}

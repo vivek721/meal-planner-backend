@@ -81,8 +81,7 @@ func NewRecipeService(client mealdb.Client, cache repository.CacheRepository, tt
 // otherwise the upstream result (which is then stored). If the upstream fails,
 // an expired entry is served instead; with no entry at all the error is
 // ErrUpstreamUnavailable. mealdb.ErrNotFound is passed through unchanged.
-func cached[T any](ctx context.Context, s *recipeService, key string, ttl time.Duration,
-	fetch func(context.Context) (T, error)) (T, error) {
+func cached[T any](ctx context.Context, s *recipeService, key string, ttl time.Duration, fetch func(context.Context) (T, error)) (T, error) {
 	var zero T
 	entry, err := s.cache.Get(key)
 	if err != nil {
@@ -114,8 +113,10 @@ func cached[T any](ctx context.Context, s *recipeService, key string, ttl time.D
 
 	if payload, mErr := json.Marshal(v); mErr == nil {
 		now := s.now()
-		if upErr := s.cache.Upsert(&models.CachedResponse{Key: key, Payload: string(payload),
-			FetchedAt: now, ExpiresAt: now.Add(ttl)}); upErr != nil {
+		if upErr := s.cache.Upsert(&models.CachedResponse{
+			Key: key, Payload: string(payload),
+			FetchedAt: now, ExpiresAt: now.Add(ttl),
+		}); upErr != nil {
 			log.Printf("recipe cache: write %q: %v", key, upErr)
 		}
 	}

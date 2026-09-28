@@ -130,6 +130,7 @@ func TestLoadMealDBOverrides(t *testing.T) {
 	cfg := Load()
 	if cfg.MealDBBaseURL != "http://mealdb.test/api" || cfg.MealDBTimeout != 2*time.Second ||
 		cfg.MealDBDetailTTL != time.Hour || cfg.MealDBSearchTTL != 3*time.Hour {
+
 		t.Errorf("overrides not applied: %+v", cfg)
 	}
 }

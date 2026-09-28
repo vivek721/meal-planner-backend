@@ -31,8 +31,10 @@ func newRecipeFixture(t *testing.T) *recipeFixture {
 	return f
 }
 
-var teriyaki = mealdb.Meal{ID: "52772", Name: "Teriyaki", Category: "Chicken", Area: "Japanese",
-	Ingredients: []mealdb.Ingredient{}, Instructions: []string{"Cook."}, Tags: []string{}}
+var teriyaki = mealdb.Meal{
+	ID: "52772", Name: "Teriyaki", Category: "Chicken", Area: "Japanese",
+	Ingredients: []mealdb.Ingredient{}, Instructions: []string{"Cook."}, Tags: []string{},
+}
 
 func TestGetCachesAndReusesFreshEntry(t *testing.T) {
 	f := newRecipeFixture(t)
@@ -102,8 +104,10 @@ func TestGetNotFound(t *testing.T) {
 func TestCorruptOrUnreadableCacheFallsThroughToFetch(t *testing.T) {
 	f := newRecipeFixture(t)
 	f.client.Meals["52772"] = teriyaki
-	f.cache.Entries["lookup:52772"] = &models.CachedResponse{Key: "lookup:52772", Payload: `{not json`,
-		FetchedAt: f.now, ExpiresAt: f.now.Add(time.Hour)}
+	f.cache.Entries["lookup:52772"] = &models.CachedResponse{
+		Key: "lookup:52772", Payload: `{not json`,
+		FetchedAt: f.now, ExpiresAt: f.now.Add(time.Hour),
+	}
 	if got, err := f.svc.Get(context.Background(), "52772"); err != nil || got.Name != "Teriyaki" {
 		t.Fatalf("corrupt fresh entry must be refetched: %+v, %v", got, err)
 	}

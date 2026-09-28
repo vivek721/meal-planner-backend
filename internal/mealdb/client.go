@@ -26,7 +26,7 @@ func NewHTTPClient(baseURL string, timeout time.Duration) *HTTPClient {
 }
 
 // get fetches path?params and returns the body of a 200 response.
-func (c *HTTPClient) get(ctx context.Context, path string, params url.Values) ([]byte, error) {
+func (c *HTTPClient) get(ctx context.Context, path string, params url.Values) (_ []byte, err error) {
 	endpoint := c.baseURL + "/" + path + "?" + params.Encode()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, http.NoBody)
 	if err != nil {
@@ -36,7 +36,11 @@ func (c *HTTPClient) get(ctx context.Context, path string, params url.Values) ([
 	if err != nil {
 		return nil, fmt.Errorf("mealdb: %s: %w", path, err)
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil && err == nil {
+			err = fmt.Errorf("mealdb: close %s: %w", path, cerr)
+		}
+	}()
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("mealdb: %s returned status %d", path, resp.StatusCode)
 	}
