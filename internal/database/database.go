@@ -62,6 +62,7 @@ func NewConnection(cfg *config.Config) (*gorm.DB, error) {
 func Migrate(db *gorm.DB) error {
 	if err := db.AutoMigrate(
 		&models.User{},
+		&models.CachedResponse{},
 		// Add other models here as they are created
 	); err != nil {
 		return fmt.Errorf("auto-migrate: %w", err)
