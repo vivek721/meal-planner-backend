@@ -3,6 +3,7 @@ package handlers_test
 import (
 	"bytes"
 	"encoding/json"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"github.com/meal-planner/backend/internal/config"
 	"github.com/meal-planner/backend/internal/models"
 	"github.com/meal-planner/backend/internal/router"
+	"github.com/meal-planner/backend/internal/services"
 	"github.com/meal-planner/backend/internal/testutil"
 	"github.com/meal-planner/backend/internal/utils"
 )
@@ -28,6 +30,7 @@ func init() {
 type testServer struct {
 	engine *gin.Engine
 	repo   *testutil.UserRepo
+	mealdb *testutil.MealDBClient
 }
 
 func newTestServer(t *testing.T) *testServer {
@@ -40,7 +43,10 @@ func newTestServer(t *testing.T) *testServer {
 		CORSAllowedOrigins: []string{"http://localhost:3000"},
 	}
 	repo := testutil.NewUserRepo()
-	return &testServer{engine: router.New(repo, cfg), repo: repo}
+	client := testutil.NewMealDBClient()
+	recipes := services.NewRecipeService(client, testutil.NewCacheRepo(),
+		services.RecipeCacheTTL{Detail: time.Hour, Search: time.Hour}, time.Now)
+	return &testServer{engine: router.New(repo, recipes, cfg), repo: repo, mealdb: client}
 }
 
 // seedUser stores a user with testPassword and returns it with a valid token.
@@ -98,4 +104,21 @@ func userField(t *testing.T, resp map[string]any, field string) any {
 		t.Fatalf("response has no user object: %v", resp)
 	}
 	return user[field]
+}
+
+// getJSON sends an authenticated GET and decodes the body into out.
+func (s *testServer) getJSON(t *testing.T, path, token string, out any) int {
+	t.Helper()
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, http.NoBody)
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	w := httptest.NewRecorder()
+	s.engine.ServeHTTP(w, req)
+	if out != nil {
+		if err := json.Unmarshal(w.Body.Bytes(), out); err != nil {
+			t.Fatalf("decode %s: %v (%s)", path, err, w.Body.String())
+		}
+	}
+	return w.Code
 }

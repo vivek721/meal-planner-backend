@@ -5,12 +5,19 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/meal-planner/backend/internal/config"
+	"github.com/meal-planner/backend/internal/services"
 	"github.com/meal-planner/backend/internal/testutil"
 )
+
+func testRecipes() services.RecipeService {
+	return services.NewRecipeService(testutil.NewMealDBClient(), testutil.NewCacheRepo(),
+		services.RecipeCacheTTL{Detail: time.Hour, Search: time.Hour}, time.Now)
+}
 
 func get(t *testing.T, engine *gin.Engine, path string) *httptest.ResponseRecorder {
 	t.Helper()
@@ -21,7 +28,7 @@ func get(t *testing.T, engine *gin.Engine, path string) *httptest.ResponseRecord
 
 func TestPublicEndpoints(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	engine := New(testutil.NewUserRepo(), testConfig("test"))
+	engine := New(testutil.NewUserRepo(), testRecipes(), testConfig("test"))
 
 	w := get(t, engine, "/health")
 	if w.Code != http.StatusOK || w.Body.String() != `{"service":"meal-planner-api","status":"healthy"}` {
@@ -69,7 +76,7 @@ func TestProtectedRoutesRequireAuth(t *testing.T) {
 
 func TestProductionSetsReleaseMode(t *testing.T) {
 	t.Cleanup(func() { gin.SetMode(gin.TestMode) })
-	New(testutil.NewUserRepo(), testConfig("production"))
+	New(testutil.NewUserRepo(), testRecipes(), testConfig("production"))
 	if gin.Mode() != gin.ReleaseMode {
 		t.Errorf("gin.Mode() = %q, want release", gin.Mode())
 	}

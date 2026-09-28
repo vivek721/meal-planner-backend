@@ -170,6 +170,8 @@ linters:
         - github.com/meal-planner/backend/*
       ignore-interface-regexps:
         - repository.UserRepository
+        - repository.CacheRepository
+        - mealdb.Client
       ignore-sigs:
         - .Errorf(
         - errors.New(

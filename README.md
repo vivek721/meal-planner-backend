@@ -8,8 +8,8 @@ runs locally or in Docker Compose with a PostgreSQL container.
 
 Frontend (React + TypeScript): [vivek721/meal-planner-frontend](https://github.com/vivek721/meal-planner-frontend)
 
-> Status: the authentication and user-account API is implemented. Recipes, meal plans, shopping
-> lists and recommendations are planned but not built yet (see [Roadmap](#roadmap)).
+> Status: the authentication and user-account API and recipe search are implemented. Meal plans,
+> shopping lists and recommendations are planned but not built yet (see [Roadmap](#roadmap)).
 
 ## Features
 
@@ -100,6 +100,10 @@ Every error response has the form `{"error": "<message>"}`.
 | PUT | `/api/auth/password` | Bearer | Body: `currentPassword`, `newPassword` (same strength rules as registration) |
 | PUT | `/api/auth/preferences` | Bearer | Body: `theme`, `notifications`. Replaces the whole preferences object |
 | POST | `/api/auth/onboarding/complete` | Bearer | Set `hasCompletedOnboarding` to `true` |
+| GET | `/api/recipes` | Bearer | Search recipes. Query: `q`, `category`, `cuisine`, `ingredient`, `page`, `limit` (at least one of `q`/`category`/`cuisine`/`ingredient` is required). Returns `{recipes, total, page, totalPages}` |
+| GET | `/api/recipes/:id` | Bearer | Recipe detail: ingredients, measures, instructions, tags |
+| GET | `/api/recipes/categories` | Bearer | List of TheMealDB categories with thumbnail and description |
+| GET | `/api/recipes/cuisines` | Bearer | Sorted list of TheMealDB cuisines (areas) |
 
 Example:
 
@@ -173,9 +177,27 @@ These are read in `internal/config/config.go`. A `.env` file is loaded if one ex
 | `JWT_EXPIRATION_HOURS` | `24` | Token lifetime |
 | `BCRYPT_COST` | `12` | bcrypt work factor |
 | `FRONTEND_URL` | `http://localhost:3000` | The only allowed CORS origin |
+| `MEALDB_BASE_URL` | `https://www.themealdb.com/api/json/v1/1` | TheMealDB API base URL |
+| `MEALDB_TIMEOUT_SECONDS` | `5` | HTTP client timeout for TheMealDB requests |
+| `MEALDB_DETAIL_TTL_HOURS` | `168` | Cache TTL for recipe lookups, categories and cuisines |
+| `MEALDB_SEARCH_TTL_HOURS` | `24` | Cache TTL for name/category/cuisine/ingredient searches |
 
 `RATE_LIMIT_ENABLED` and `RATE_LIMIT_PER_MIN` appear in `.env.example` and are parsed into the
 config, but no code reads them yet.
+
+## Recipes (TheMealDB)
+
+Recipe data comes from [TheMealDB](https://www.themealdb.com/) through a Postgres read-through
+cache (the `mealdb_cache` table): a cached response is returned when fresh, otherwise the API
+fetches from TheMealDB, caches the result, and returns it. Lookups, categories and cuisines are
+cached for `MEALDB_DETAIL_TTL_HOURS` (default 7 days); searches and filters are cached for
+`MEALDB_SEARCH_TTL_HOURS` (default 24 hours). If TheMealDB is unreachable and a cache entry has
+expired, the stale entry is served rather than failing the request; if nothing is cached, the
+endpoint returns `503`. Search parameters (`q`, `category`, `cuisine`, `ingredient`) are limited to
+100 characters each; longer values return `400`.
+
+Recipe data and images from TheMealDB (themealdb.com). The public API key `1` is for development
+and educational use; a public production deployment should follow TheMealDB's supporter terms.
 
 ## Running Tests
 
@@ -195,7 +217,6 @@ because they need PostgreSQL.
 
 These items are planned (see `docs/epics/`) and **not implemented yet**:
 
-- Recipe service: recipe CRUD and search
 - Meal-planning API: weekly meal plans
 - Shopping-list generation from meal plans
 - Meal recommendations and nutrition analysis

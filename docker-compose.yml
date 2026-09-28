@@ -54,6 +54,12 @@ services:
       # Rate Limiting
       RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
       RATE_LIMIT_PER_MIN: ${RATE_LIMIT_PER_MIN:-100}
+
+      # TheMealDB
+      MEALDB_BASE_URL: ${MEALDB_BASE_URL:-https://www.themealdb.com/api/json/v1/1}
+      MEALDB_TIMEOUT_SECONDS: ${MEALDB_TIMEOUT_SECONDS:-5}
+      MEALDB_DETAIL_TTL_HOURS: ${MEALDB_DETAIL_TTL_HOURS:-168}
+      MEALDB_SEARCH_TTL_HOURS: ${MEALDB_SEARCH_TTL_HOURS:-24}
     depends_on:
       postgres:
         condition: service_healthy

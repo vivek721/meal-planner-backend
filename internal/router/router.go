@@ -3,12 +3,14 @@ package router
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
 	"github.com/meal-planner/backend/internal/config"
 	"github.com/meal-planner/backend/internal/handlers"
+	"github.com/meal-planner/backend/internal/mealdb"
 	"github.com/meal-planner/backend/internal/middleware"
 	"github.com/meal-planner/backend/internal/repository"
 	"github.com/meal-planner/backend/internal/services"
@@ -16,11 +18,17 @@ import (
 
 // Setup initializes and configures the router backed by the given database.
 func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
-	return New(repository.NewUserRepository(db), cfg)
+	recipes := services.NewRecipeService(
+		mealdb.NewHTTPClient(cfg.MealDBBaseURL, cfg.MealDBTimeout),
+		repository.NewCacheRepository(db),
+		services.RecipeCacheTTL{Detail: cfg.MealDBDetailTTL, Search: cfg.MealDBSearchTTL},
+		time.Now,
+	)
+	return New(repository.NewUserRepository(db), recipes, cfg)
 }
 
-// New builds the router on top of an arbitrary user repository.
-func New(userRepo repository.UserRepository, cfg *config.Config) *gin.Engine {
+// New builds the router on top of the given user repository and recipe service.
+func New(userRepo repository.UserRepository, recipes services.RecipeService, cfg *config.Config) *gin.Engine {
 	// Set Gin mode based on environment
 	if cfg.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
@@ -59,6 +67,12 @@ func New(userRepo repository.UserRepository, cfg *config.Config) *gin.Engine {
 					"onboarding":  "POST /api/auth/onboarding/complete (protected)",
 					"preferences": "PUT /api/auth/preferences (protected)",
 				},
+				"recipes": gin.H{
+					"search":     "GET /api/recipes?q=&category=&cuisine=&ingredient=&page=&limit= (protected)",
+					"detail":     "GET /api/recipes/:id (protected)",
+					"categories": "GET /api/recipes/categories (protected)",
+					"cuisines":   "GET /api/recipes/cuisines (protected)",
+				},
 			},
 		})
 	})
@@ -70,6 +84,7 @@ func New(userRepo repository.UserRepository, cfg *config.Config) *gin.Engine {
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(authService)
 	userHandler := handlers.NewUserHandler(userService)
+	recipeHandler := handlers.NewRecipeHandler(recipes)
 
 	// API routes
 	api := router.Group("/api")
@@ -93,6 +108,14 @@ func New(userRepo repository.UserRepository, cfg *config.Config) *gin.Engine {
 			// Onboarding
 			protected.POST("/onboarding/complete", userHandler.CompleteOnboarding)
 		}
+
+		// Recipe routes (protected)
+		recipeRoutes := api.Group("/recipes")
+		recipeRoutes.Use(middleware.AuthMiddleware(cfg))
+		recipeRoutes.GET("", recipeHandler.Search)
+		recipeRoutes.GET("/categories", recipeHandler.Categories)
+		recipeRoutes.GET("/cuisines", recipeHandler.Cuisines)
+		recipeRoutes.GET("/:id", recipeHandler.Get)
 	}
 
 	return router
