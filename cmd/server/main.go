@@ -2,14 +2,18 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 
 	"github.com/meal-planner/backend/internal/config"
 	"github.com/meal-planner/backend/internal/database"
+	"github.com/meal-planner/backend/internal/repository"
 	"github.com/meal-planner/backend/internal/router"
+	"github.com/meal-planner/backend/internal/services"
 )
 
 func main() {
@@ -34,6 +38,14 @@ func main() {
 
 	// Initialize router with dependencies
 	r := router.Setup(db, cfg)
+
+	// Purge long-expired mealdb_cache rows once at startup and then every
+	// CachePurgeInterval. The server has no graceful-shutdown path today, so
+	// the loop simply runs for the lifetime of the process; PurgeExpiredCacheLoop
+	// itself supports stopping via context cancellation (see its tests).
+	go services.PurgeExpiredCacheLoop(
+		context.Background(), repository.NewCacheRepository(db), cfg.MealDBCacheRetention, time.Now, services.CachePurgeInterval,
+	)
 
 	// Start server
 	port := os.Getenv("PORT")

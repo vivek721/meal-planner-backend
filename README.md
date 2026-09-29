@@ -181,6 +181,7 @@ These are read in `internal/config/config.go`. A `.env` file is loaded if one ex
 | `MEALDB_TIMEOUT_SECONDS` | `5` | HTTP client timeout for TheMealDB requests |
 | `MEALDB_DETAIL_TTL_HOURS` | `168` | Cache TTL for recipe lookups, categories and cuisines |
 | `MEALDB_SEARCH_TTL_HOURS` | `24` | Cache TTL for name/category/cuisine/ingredient searches |
+| `MEALDB_CACHE_RETENTION_DAYS` | `30` | How long expired `mealdb_cache` rows are kept before being purged |
 
 `RATE_LIMIT_ENABLED` and `RATE_LIMIT_PER_MIN` appear in `.env.example` and are parsed into the
 config, but no code reads them yet.
@@ -195,6 +196,11 @@ cached for `MEALDB_DETAIL_TTL_HOURS` (default 7 days); searches and filters are 
 expired, the stale entry is served rather than failing the request; if nothing is cached, the
 endpoint returns `503`. Search parameters (`q`, `category`, `cuisine`, `ingredient`) are limited to
 100 characters each; longer values return `400`.
+
+Expired rows are kept for stale-on-error, but not forever: a background purge runs once at startup
+and every 24 hours afterwards, deleting `mealdb_cache` rows whose `expires_at` is older than
+`MEALDB_CACHE_RETENTION_DAYS` (default 30 days). Rows that are merely expired but still within the
+retention window are left alone since stale-on-error can still need them.
 
 Recipe data and images from TheMealDB (themealdb.com). The public API key `1` is for development
 and educational use; a public production deployment should follow TheMealDB's supporter terms.
