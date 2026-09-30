@@ -64,7 +64,10 @@ func gramsFor(amt measure.Amount, name string, o overrides.Override, portions []
 			if p.Amount <= 0 || p.GramWeight <= 0 {
 				continue
 			}
-			desc := strings.ToLower(p.Unit + " " + p.Modifier)
+			desc := portionText(p)
+			if namesPart(desc) {
+				continue
+			}
 			for _, w := range words {
 				if w != "" && strings.Contains(desc, w) {
 					return amt.Value * p.GramWeight / p.Amount, true
@@ -111,6 +114,22 @@ var parenNoteRe = regexp.MustCompile(`\([^)]*\)`)
 // portion's own.
 func portionText(p usda.Portion) string {
 	return strings.ToLower(parenNoteRe.ReplaceAllString(p.Unit+" "+p.Modifier, " "))
+}
+
+// partWords mark a portion as a piece or a volume of the food rather than
+// one whole item: `slice, medium (1/8" thick)` is not a medium onion.
+var partWords = []string{
+	"slice", "ring", "wedge", "strip", "cup", "tbsp", "tablespoon", "tsp", "teaspoon",
+	"chopped", "diced", "minced", "grated", "shredded",
+}
+
+func namesPart(desc string) bool {
+	for _, w := range partWords {
+		if strings.Contains(desc, w) {
+			return true
+		}
+	}
+	return false
 }
 
 // hasWord reports whether desc contains any of words as a whole token, so

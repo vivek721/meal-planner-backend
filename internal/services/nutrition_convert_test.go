@@ -106,6 +106,25 @@ func TestGramsForCount(t *testing.T) {
 	}
 }
 
+func TestGramsForCountSkipsPartPortions(t *testing.T) {
+	// Real FDC portions for "Onions, raw" (170000), in FDC's order. "slice,
+	// medium" names a slice, not a whole onion; the whole medium onion is
+	// 110 g.
+	portions := []usda.Portion{
+		{Amount: 1, Unit: "undetermined", Modifier: "cup, chopped", GramWeight: 160},
+		{Amount: 1, Unit: "undetermined", Modifier: `slice, medium (1/8" thick)`, GramWeight: 14},
+		{Amount: 1, Unit: "undetermined", Modifier: `medium (2-1/2" dia)`, GramWeight: 110},
+		{Amount: 1, Unit: "undetermined", Modifier: "large", GramWeight: 150},
+		{Amount: 10, Unit: "undetermined", Modifier: "rings", GramWeight: 60},
+		{Amount: 1, Unit: "undetermined", Modifier: "tbsp chopped", GramWeight: 10},
+		{Amount: 1, Unit: "undetermined", Modifier: "small", GramWeight: 70},
+	}
+	g, ok := gramsFor(measure.Amount{Kind: measure.Count, Value: 2}, "onions", overrides.Override{}, portions)
+	if !ok || g != 220 {
+		t.Errorf("2 onions = %v g, %v; want 220 (2 x medium)", g, ok)
+	}
+}
+
 func TestGramsForSkipsZeroWeightPortions(t *testing.T) {
 	// gramWeight or amount of 0 must be skipped, never divided by.
 	bad := []usda.Portion{
