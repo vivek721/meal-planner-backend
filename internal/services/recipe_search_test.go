@@ -6,9 +6,13 @@ import (
 	"fmt"
 	"math"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/meal-planner/backend/internal/mealdb"
+	"github.com/meal-planner/backend/internal/testutil"
 )
 
 func ref(id string) mealdb.MealRef {
@@ -154,5 +158,158 @@ func TestSearchUpstreamErrorPropagates(t *testing.T) {
 	f.client.Err = errors.New("down")
 	if _, err := f.svc.Search(context.Background(), RecipeQuery{Category: "Beef"}); !errors.Is(err, ErrUpstreamUnavailable) {
 		t.Fatalf("err = %v, want ErrUpstreamUnavailable", err)
+	}
+}
+
+func TestSearchFilterSpellingsShareOneCacheEntry(t *testing.T) {
+	f := newRecipeFixture(t)
+	f.client.Filters["c=Beef"] = []mealdb.MealRef{ref("1"), ref("2")}
+	f.client.Filters["i=Chicken_Breast"] = []mealdb.MealRef{ref("3")}
+	for _, q := range []RecipeQuery{{Category: "Beef"}, {Category: "BEEF"}, {Category: " beef "}} {
+		if p, err := f.svc.Search(context.Background(), q); err != nil || fmt.Sprint(ids(p)) != "[1 2]" {
+			t.Fatalf("%+v: Search = %+v, %v", q, p, err)
+		}
+	}
+	for _, q := range []RecipeQuery{{Ingredient: "Chicken_Breast"}, {Ingredient: "chicken  breast"}} {
+		if p, err := f.svc.Search(context.Background(), q); err != nil || fmt.Sprint(ids(p)) != "[3]" {
+			t.Fatalf("%+v: Search = %+v, %v", q, p, err)
+		}
+	}
+	if f.client.FilterCalls != 2 {
+		t.Errorf("FilterCalls = %d, want 2 (one per distinct filter, whatever the spelling)", f.client.FilterCalls)
+	}
+	for _, key := range []string{"filter:c=beef", "filter:i=chicken breast"} {
+		if _, ok := f.cache.Entries[key]; !ok {
+			t.Errorf("missing normalised cache key %q", key)
+		}
+	}
+}
+
+func TestSearchFilterReportsCanonicalLabels(t *testing.T) {
+	f := newRecipeFixture(t)
+	f.client.CategoryList = []mealdb.Category{{Name: "Beef"}, {Name: "Seafood"}}
+	f.client.AreaList = []string{"Canadian", "Italian"}
+	f.client.Filters["c=beef"] = []mealdb.MealRef{ref("1")}
+	f.client.Filters["a=CANADIAN"] = []mealdb.MealRef{ref("1")}
+	p, err := f.svc.Search(context.Background(), RecipeQuery{Category: "beef", Cuisine: "CANADIAN"})
+	if err != nil || p.Total != 1 || p.Recipes[0].Category != "Beef" || p.Recipes[0].Cuisine != "Canadian" {
+		t.Fatalf("Search = %+v, %v", p, err)
+	}
+}
+
+func TestSearchFilterLabelFallsBackToTypedText(t *testing.T) {
+	f := newRecipeFixture(t)
+	f.client.CategoriesErr = errors.New("categories down")
+	f.client.AreaList = []string{"Italian"}
+	f.client.Filters["c=beef"] = []mealdb.MealRef{ref("1")}
+	f.client.Filters["a=Martian"] = []mealdb.MealRef{ref("1")}
+	p, err := f.svc.Search(context.Background(), RecipeQuery{Category: "beef", Cuisine: "Martian"})
+	if err != nil || p.Total != 1 || p.Recipes[0].Category != "beef" || p.Recipes[0].Cuisine != "Martian" {
+		t.Fatalf("a failed or non-matching label lookup must not fail the search: %+v, %v", p, err)
+	}
+}
+
+// barrierClient holds every Search and Filter call until `want` of them are
+// in flight at once, so a service that makes them one at a time fails.
+type barrierClient struct {
+	*testutil.MealDBClient
+	want    int
+	mu      sync.Mutex
+	arrived int
+	all     chan struct{}
+}
+
+func newBarrierClient(want int) *barrierClient {
+	return &barrierClient{MealDBClient: testutil.NewMealDBClient(), want: want, all: make(chan struct{})}
+}
+
+func (b *barrierClient) wait(ctx context.Context) error {
+	b.mu.Lock()
+	b.arrived++
+	if b.arrived == b.want {
+		close(b.all)
+	}
+	b.mu.Unlock()
+	select {
+	case <-b.all:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(2 * time.Second):
+		return errors.New("upstream calls were made one at a time")
+	}
+}
+
+func (b *barrierClient) Search(ctx context.Context, query string) ([]mealdb.Meal, error) {
+	if err := b.wait(ctx); err != nil {
+		return nil, err
+	}
+	return b.MealDBClient.Search(ctx, query)
+}
+
+func (b *barrierClient) Filter(ctx context.Context, kind mealdb.FilterKind, value string) ([]mealdb.MealRef, error) {
+	if err := b.wait(ctx); err != nil {
+		return nil, err
+	}
+	return b.MealDBClient.Filter(ctx, kind, value)
+}
+
+func newServiceWith(client mealdb.Client) RecipeService {
+	return NewRecipeService(client, testutil.NewCacheRepo(), RecipeCacheTTL{Detail: time.Hour, Search: time.Hour}, time.Now)
+}
+
+func TestSearchFetchesFiltersConcurrently(t *testing.T) {
+	c := newBarrierClient(3)
+	c.Filters["c=Vegetarian"] = []mealdb.MealRef{ref("1"), ref("2")}
+	c.Filters["a=Italian"] = []mealdb.MealRef{ref("2")}
+	c.Filters["i=garlic"] = []mealdb.MealRef{ref("2")}
+	p, err := newServiceWith(c).Search(context.Background(), RecipeQuery{Category: "Vegetarian", Cuisine: "Italian", Ingredient: "garlic"})
+	if err != nil || fmt.Sprint(ids(p)) != "[2]" {
+		t.Fatalf("Search = %+v, %v", p, err)
+	}
+}
+
+func TestSearchByNameFetchesIngredientFilterConcurrently(t *testing.T) {
+	c := newBarrierClient(2)
+	c.SearchResults["soup"] = []mealdb.Meal{{ID: "1", Name: "Soup"}, {ID: "2", Name: "Other soup"}}
+	c.Filters["i=garlic"] = []mealdb.MealRef{ref("2")}
+	p, err := newServiceWith(c).Search(context.Background(), RecipeQuery{Q: "soup", Ingredient: "garlic"})
+	if err != nil || fmt.Sprint(ids(p)) != "[2]" {
+		t.Fatalf("Search = %+v, %v", p, err)
+	}
+}
+
+// failFastClient fails the cuisine filter at once and holds the others until
+// their context is cancelled, recording how many were cancelled.
+type failFastClient struct {
+	*testutil.MealDBClient
+	cancelled atomic.Int32
+}
+
+func (c *failFastClient) Filter(ctx context.Context, kind mealdb.FilterKind, _ string) ([]mealdb.MealRef, error) {
+	if kind == mealdb.FilterArea {
+		return nil, errors.New("area filter down")
+	}
+	select {
+	case <-ctx.Done():
+		c.cancelled.Add(1)
+		return nil, ctx.Err()
+	case <-time.After(2 * time.Second):
+		return []mealdb.MealRef{}, nil
+	}
+}
+
+func TestSearchFilterFailureCancelsTheOthers(t *testing.T) {
+	c := &failFastClient{MealDBClient: testutil.NewMealDBClient()}
+	start := time.Now()
+	_, err := newServiceWith(c).Search(context.Background(), RecipeQuery{Category: "Beef", Cuisine: "Italian", Ingredient: "garlic"})
+	if !errors.Is(err, ErrUpstreamUnavailable) {
+		t.Fatalf("err = %v, want ErrUpstreamUnavailable", err)
+	}
+	if elapsed := time.Since(start); elapsed > time.Second {
+		t.Errorf("Search took %v; the other fetches should be cancelled, not awaited", elapsed)
+	}
+	if n := c.cancelled.Load(); n != 2 {
+		t.Errorf("cancelled = %d, want 2", n)
 	}
 }
