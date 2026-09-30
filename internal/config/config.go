@@ -94,7 +94,7 @@ func Load() *Config {
 		// USDA FoodData Central
 		USDAAPIKey:   getEnv("USDA_API_KEY", "DEMO_KEY"),
 		USDABaseURL:  getEnv("USDA_BASE_URL", "https://api.nal.usda.gov/fdc/v1"),
-		USDATimeout:  time.Duration(getEnvAsPositiveInt("USDA_TIMEOUT_SECONDS", 5)) * time.Second,
+		USDATimeout:  time.Duration(getEnvAsPositiveInt("USDA_TIMEOUT_SECONDS", 15)) * time.Second,
 		USDAMatchTTL: time.Duration(getEnvAsPositiveInt("USDA_MATCH_TTL_HOURS", 720)) * time.Hour,
 		USDAFoodTTL:  time.Duration(getEnvAsPositiveInt("USDA_FOOD_TTL_HOURS", 2160)) * time.Hour,
 		NutritionTTL: time.Duration(getEnvAsPositiveInt("NUTRITION_TTL_HOURS", 168)) * time.Hour,

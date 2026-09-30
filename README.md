@@ -186,7 +186,7 @@ These are read in `internal/config/config.go`. A `.env` file is loaded if one ex
 | `MEALDB_CACHE_RETENTION_DAYS` | `30` | How long expired `mealdb_cache` rows are kept before being purged |
 | `USDA_API_KEY` | `DEMO_KEY` | USDA FoodData Central key. Get a free one at [api.data.gov](https://api.data.gov/signup/); `DEMO_KEY` allows only 10 requests/hour |
 | `USDA_BASE_URL` | `https://api.nal.usda.gov/fdc/v1` | FDC API base URL |
-| `USDA_TIMEOUT_SECONDS` | `5` | HTTP client timeout for FDC requests |
+| `USDA_TIMEOUT_SECONDS` | `15` | HTTP client timeout for FDC requests |
 | `USDA_MATCH_TTL_HOURS` | `720` | Cache TTL for ingredient-name-to-food matching decisions |
 | `USDA_FOOD_TTL_HOURS` | `2160` | Cache TTL for per-food nutrients and portions |
 | `NUTRITION_TTL_HOURS` | `168` | Cache TTL for finished per-recipe estimates |

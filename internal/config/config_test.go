@@ -195,7 +195,7 @@ func TestUSDADefaults(t *testing.T) {
 	if cfg.USDABaseURL != "https://api.nal.usda.gov/fdc/v1" {
 		t.Errorf("USDABaseURL = %q", cfg.USDABaseURL)
 	}
-	if cfg.USDATimeout != 5*time.Second {
+	if cfg.USDATimeout != 15*time.Second {
 		t.Errorf("USDATimeout = %v", cfg.USDATimeout)
 	}
 	if cfg.USDAMatchTTL != 720*time.Hour || cfg.USDAFoodTTL != 2160*time.Hour || cfg.NutritionTTL != 168*time.Hour {
