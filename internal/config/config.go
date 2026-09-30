@@ -42,6 +42,14 @@ type Config struct {
 	MealDBDetailTTL      time.Duration
 	MealDBSearchTTL      time.Duration
 	MealDBCacheRetention time.Duration
+
+	// USDA FoodData Central nutrition source
+	USDAAPIKey   string
+	USDABaseURL  string
+	USDATimeout  time.Duration
+	USDAMatchTTL time.Duration // ingredient-name -> FDC id decisions
+	USDAFoodTTL  time.Duration // per-food nutrients and portions
+	NutritionTTL time.Duration // finished per-recipe estimates
 }
 
 // Load loads configuration from environment variables
@@ -82,6 +90,14 @@ func Load() *Config {
 		MealDBDetailTTL:      time.Duration(getEnvAsPositiveInt("MEALDB_DETAIL_TTL_HOURS", 168)) * time.Hour,
 		MealDBSearchTTL:      time.Duration(getEnvAsPositiveInt("MEALDB_SEARCH_TTL_HOURS", 24)) * time.Hour,
 		MealDBCacheRetention: time.Duration(getEnvAsPositiveInt("MEALDB_CACHE_RETENTION_DAYS", 30)) * 24 * time.Hour,
+
+		// USDA FoodData Central
+		USDAAPIKey:   getEnv("USDA_API_KEY", "DEMO_KEY"),
+		USDABaseURL:  getEnv("USDA_BASE_URL", "https://api.nal.usda.gov/fdc/v1"),
+		USDATimeout:  time.Duration(getEnvAsPositiveInt("USDA_TIMEOUT_SECONDS", 5)) * time.Second,
+		USDAMatchTTL: time.Duration(getEnvAsPositiveInt("USDA_MATCH_TTL_HOURS", 720)) * time.Hour,
+		USDAFoodTTL:  time.Duration(getEnvAsPositiveInt("USDA_FOOD_TTL_HOURS", 2160)) * time.Hour,
+		NutritionTTL: time.Duration(getEnvAsPositiveInt("NUTRITION_TTL_HOURS", 168)) * time.Hour,
 	}
 }
 
