@@ -3,6 +3,7 @@ package services
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"log"
 	"reflect"
@@ -84,12 +85,12 @@ func TestEstimateCountsAndTotals(t *testing.T) {
 	}
 	// 3/4 cup = 177.441 ml; grams = 177.441 * 16 / 14.7868 = 192.0
 	soy := got.Ingredients[0]
-	if soy.Status != "counted" || soy.Grams < 191.9 || soy.Grams > 192.1 || soy.Food == nil || soy.Food.FDCID != 174277 {
+	if soy.Status != "counted" || soy.Grams == nil || *soy.Grams < 191.9 || *soy.Grams > 192.1 || soy.Food == nil || soy.Food.FDCID != 174277 {
 		t.Errorf("soy line = %+v", soy)
 	}
 	// calories = 192.0/100*53 = 101.8 -> 102
-	if soy.Calories != 102 {
-		t.Errorf("soy calories = %d, want 102", soy.Calories)
+	if soy.Calories == nil || *soy.Calories != 102 {
+		t.Errorf("soy calories = %v, want 102", soy.Calories)
 	}
 	salt := got.Ingredients[1]
 	if salt.Status != "notCounted" || salt.Reason != "unmeasurable" || salt.Food != nil {
@@ -142,7 +143,7 @@ func TestEstimateOverridePinsFoodAndSkipsSearch(t *testing.T) {
 		t.Fatalf("Estimate: %v", err)
 	}
 	line := got.Ingredients[0]
-	if line.Status != "counted" || line.Grams != 348 || line.Food.FDCID != 171077 {
+	if line.Status != "counted" || line.Grams == nil || *line.Grams != 348 || line.Food.FDCID != 171077 {
 		t.Errorf("line = %+v", line)
 	}
 	if f.client.SearchCalls != 0 {
@@ -218,6 +219,54 @@ func TestEstimateNotFoundPassesThrough(t *testing.T) {
 	}
 }
 
+func TestIngredientJSONDistinguishesZeroFromUnreported(t *testing.T) {
+	f := newNutritionFixture(t, `{}`)
+	f.client.SearchResults["water"] = []usda.SearchFood{{FDCID: 1, Description: "Water, bottled, generic"}}
+	f.client.FoodsByID[1] = usda.Food{
+		FDCID: 1, Description: "Water, bottled, generic",
+		Per100g:  usda.Nutrients{usda.Calories: 0, usda.Sodium: 4},
+		Portions: []usda.Portion{{Amount: 1, Unit: "cup", GramWeight: 237}},
+	}
+	f.client.SearchResults["mystery"] = []usda.SearchFood{{FDCID: 2, Description: "Mystery, raw"}}
+	f.client.FoodsByID[2] = usda.Food{FDCID: 2, Description: "Mystery, raw", Per100g: usda.Nutrients{}}
+	f.seedMeal("14",
+		mealdb.Ingredient{Name: "water", Measure: "100ml"},
+		mealdb.Ingredient{Name: "mystery", Measure: "0.01g"},
+		mealdb.Ingredient{Name: "salt", Measure: "pinch"},
+	)
+	got, err := f.svc.Estimate(context.Background(), "14")
+	if err != nil {
+		t.Fatalf("Estimate: %v", err)
+	}
+	payload, err := json.Marshal(got.Ingredients)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var lines []map[string]any
+	if err := json.Unmarshal(payload, &lines); err != nil {
+		t.Fatal(err)
+	}
+
+	// Counted, 0 kcal reported: calories must be present as 0.
+	if v, ok := lines[0]["calories"]; !ok || v != float64(0) {
+		t.Errorf("water line = %v, want calories: 0", lines[0])
+	}
+	// Counted, tiny amount rounding to 0.0 g: grams must still be present.
+	if v, ok := lines[1]["grams"]; !ok || v != float64(0) {
+		t.Errorf("mystery line = %v, want grams: 0", lines[1])
+	}
+	// Counted but FDC reports no energy: calories must be absent.
+	if _, ok := lines[1]["calories"]; ok {
+		t.Errorf("mystery line = %v, want no calories key (not reported)", lines[1])
+	}
+	// Not counted: neither field.
+	for _, k := range []string{"grams", "calories"} {
+		if _, ok := lines[2][k]; ok {
+			t.Errorf("salt line = %v, must not have %q", lines[2], k)
+		}
+	}
+}
+
 func TestEstimateUpstreamFailure(t *testing.T) {
 	f := newNutritionFixture(t, `{}`)
 	f.seedMeal("6", mealdb.Ingredient{Name: "soy sauce", Measure: "1 tbs"})
@@ -270,7 +319,7 @@ func TestEstimateResultCachedAndVersioned(t *testing.T) {
 	if f.client.SearchCalls != searches || f.client.FoodsCalls != foods {
 		t.Error("repeat view must make no FDC calls")
 	}
-	if _, ok := f.cache.Entries["nutrition:"+f.ov.Version()+":52772"]; !ok {
+	if _, ok := f.cache.Entries["nutrition:v2:"+f.ov.Version()+":52772"]; !ok {
 		t.Errorf("result cache key missing; have %v", cacheKeys(f.cache.Entries))
 	}
 
@@ -350,7 +399,7 @@ func TestPartialFailureCachesNothing(t *testing.T) {
 	if _, err := f.svc.Estimate(context.Background(), "11"); !errors.Is(err, ErrUpstreamUnavailable) {
 		t.Fatalf("err = %v", err)
 	}
-	if _, ok := f.cache.Entries["nutrition:"+f.ov.Version()+":11"]; ok {
+	if _, ok := f.cache.Entries["nutrition:v2:"+f.ov.Version()+":11"]; ok {
 		t.Error("a partial result must never be cached")
 	}
 }

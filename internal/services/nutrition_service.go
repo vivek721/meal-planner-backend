@@ -58,14 +58,16 @@ type NutritionFoodRef struct {
 }
 
 // IngredientNutrition traces one ingredient line: counted with its grams,
-// food and calories, or notCounted with a reason.
+// food and calories, or notCounted with a reason. Grams and Calories are
+// pointers so a counted 0 is sent as 0: Grams is nil only on notCounted
+// lines, and Calories is also nil when FDC reports no energy for the food.
 type IngredientNutrition struct {
 	Name     string            `json:"name"`
 	Measure  string            `json:"measure"`
 	Status   string            `json:"status"`
-	Grams    float64           `json:"grams,omitempty"`
+	Grams    *float64          `json:"grams,omitempty"`
 	Food     *NutritionFoodRef `json:"food,omitempty"`
-	Calories int               `json:"calories,omitempty"`
+	Calories *int              `json:"calories,omitempty"`
 	Reason   string            `json:"reason,omitempty"`
 }
 
@@ -107,8 +109,12 @@ func NewNutritionService(recipes RecipeService, client usda.Client, cache reposi
 	}
 }
 
+// resultFormat versions the cached RecipeNutrition shape. Bump it when the
+// response changes so estimates cached in the old shape are not served.
+const resultFormat = "v2"
+
 func (s *nutritionService) Estimate(ctx context.Context, mealID string) (*RecipeNutrition, error) {
-	key := "nutrition:" + s.ov.Version() + ":" + mealID
+	key := "nutrition:" + resultFormat + ":" + s.ov.Version() + ":" + mealID
 	v, err := cached(ctx, s.rc, key, s.ttl.Result, func(ctx context.Context) (RecipeNutrition, error) {
 		out, err := s.estimate(ctx, mealID)
 		if err != nil {
@@ -316,10 +322,12 @@ func assemble(meal *mealdb.Meal, matches map[string]int, foods map[int]usda.Food
 				break
 			}
 			line.Status = statusCounted
-			line.Grams = round1(grams)
+			rounded := round1(grams)
+			line.Grams = &rounded
 			line.Food = &NutritionFoodRef{FDCID: food.FDCID, Description: food.Description}
 			if kcal, has := food.Per100g[usda.Calories]; has {
-				line.Calories = int(math.Round(grams / 100 * kcal))
+				c := int(math.Round(grams / 100 * kcal))
+				line.Calories = &c
 			}
 			res.Coverage.Counted++
 			for _, n := range usda.All {
