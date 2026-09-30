@@ -2,6 +2,7 @@ package usda
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -86,5 +87,115 @@ func TestSearchTimeout(t *testing.T) {
 	}
 	if strings.Contains(err.Error(), "test-key") {
 		t.Errorf("timeout err = %v, must not contain the API key", err)
+	}
+}
+
+func TestFoodsMapsNutrientsAndPortions(t *testing.T) {
+	c, srv := newTestClient(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/foods" {
+			t.Errorf("got %s %s", r.Method, r.URL.Path)
+		}
+		var req struct {
+			FDCIDs []int  `json:"fdcIds"`
+			Format string `json:"format"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Format != "full" {
+			t.Errorf("bad body: %+v, %v", req, err)
+		}
+		_, _ = w.Write([]byte(`[{
+			"fdcId":174277,"description":"Soy sauce (shoyu)","dataType":"SR Legacy",
+			"foodNutrients":[
+				{"nutrient":{"number":"208"},"amount":53.0},
+				{"nutrient":{"number":"203"},"amount":8.14},
+				{"nutrient":{"number":"204"},"amount":0.57},
+				{"nutrient":{"number":"205"},"amount":4.93},
+				{"nutrient":{"number":"307"},"amount":5493.0},
+				{"nutrient":{"number":"999"},"amount":1.0},
+				{"nutrient":{"number":"291"}}
+			],
+			"foodPortions":[
+				{"amount":1,"gramWeight":16.0,"modifier":"","measureUnit":{"name":"tablespoon","abbreviation":"tbsp"}},
+				{"amount":1,"gramWeight":255.0,"modifier":"cup","measureUnit":{"name":"undetermined","abbreviation":"undetermined"}}
+			]}]`))
+	})
+	defer srv.Close()
+
+	foods, err := c.Foods(context.Background(), []int{174277})
+	if err != nil {
+		t.Fatalf("Foods: %v", err)
+	}
+	f := foods[0]
+	want := Nutrients{Calories: 53.0, Protein: 8.14, Fat: 0.57, Carbohydrate: 4.93, Sodium: 5493.0}
+	if !reflect.DeepEqual(f.Per100g, want) {
+		t.Errorf("Per100g = %v, want %v (fiber had no amount: absent; 999: ignored)", f.Per100g, want)
+	}
+	wantPortions := []Portion{
+		{Amount: 1, Unit: "tbsp", Modifier: "", GramWeight: 16},
+		{Amount: 1, Unit: "undetermined", Modifier: "cup", GramWeight: 255},
+	}
+	if !reflect.DeepEqual(f.Portions, wantPortions) {
+		t.Errorf("Portions = %+v, want %+v", f.Portions, wantPortions)
+	}
+}
+
+func TestFoodsEnergyFallback(t *testing.T) {
+	cases := []struct {
+		name, nutrients string
+		want            Nutrients
+	}{
+		{"958 preferred over 957",
+			`[{"nutrient":{"number":"957"},"amount":100.0},{"nutrient":{"number":"958"},"amount":90.0}]`,
+			Nutrients{Calories: 90}},
+		{"957 alone",
+			`[{"nutrient":{"number":"957"},"amount":100.0}]`,
+			Nutrients{Calories: 100}},
+		{"208 wins over both",
+			`[{"nutrient":{"number":"208"},"amount":80.0},{"nutrient":{"number":"958"},"amount":90.0}]`,
+			Nutrients{Calories: 80}},
+		{"none: calories absent", `[]`, Nutrients{}},
+	}
+	for _, tc := range cases {
+		c, srv := newTestClient(func(w http.ResponseWriter, r *http.Request) {
+			_, _ = w.Write([]byte(`[{"fdcId":1,"description":"x","dataType":"Foundation","foodNutrients":` + tc.nutrients + `,"foodPortions":[]}]`))
+		})
+		foods, err := c.Foods(context.Background(), []int{1})
+		srv.Close()
+		if err != nil || !reflect.DeepEqual(foods[0].Per100g, tc.want) {
+			t.Errorf("%s: Per100g = %v, %v; want %v", tc.name, foods[0].Per100g, err, tc.want)
+		}
+	}
+}
+
+func TestFoodsBatchesOver20IDs(t *testing.T) {
+	var batches [][]int
+	c, srv := newTestClient(func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			FDCIDs []int `json:"fdcIds"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		batches = append(batches, req.FDCIDs)
+		_, _ = w.Write([]byte(`[]`))
+	})
+	defer srv.Close()
+
+	ids := make([]int, 25)
+	for i := range ids {
+		ids[i] = i + 1
+	}
+	if _, err := c.Foods(context.Background(), ids); err != nil {
+		t.Fatalf("Foods: %v", err)
+	}
+	if len(batches) != 2 || len(batches[0]) != 20 || len(batches[1]) != 5 {
+		t.Errorf("batches = %v, want sizes [20 5]", batches)
+	}
+}
+
+func TestFoodsUpstreamError(t *testing.T) {
+	c, srv := newTestClient(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	})
+	defer srv.Close()
+	if _, err := c.Foods(context.Background(), []int{1}); err == nil {
+		t.Fatal("want error on 500")
 	}
 }
