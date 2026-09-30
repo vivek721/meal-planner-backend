@@ -76,11 +76,15 @@ A pure function, `Parse(measure string) Amount`, with no I/O.
 
 For each ingredient line:
 1. **Parse** the measure (§2.2). `Unmeasurable` → not counted, reason `unmeasurable`.
-2. **Match** a food: use the override's `fdcId` if one exists. Otherwise take the best FDC search result for the ingredient name, ranked:
-   1. descriptions whose first comma-separated segment matches the name (singular or plural)
-   2. then descriptions containing `raw`
-   3. then FDC's own order
+2. **Match** a food: use the override's `fdcId` if one exists. Otherwise take the best FDC search result for the ingredient name, ranked (each rule breaks ties in the one before):
+   1. not a substitute food (`meatless`, `imitation`, `substitute`)
+   2. descriptions whose first comma-separated segment matches the name (singular or plural)
+   3. then descriptions containing `raw`
+   4. then SR Legacy before Foundation, because Foundation foods often list only a reference serving (RACC), not household portions
+   5. then FDC's own order
    No result → not counted, reason `noMatch`.
+
+   *Amended 2026-09-30 after the live FDC run:* the original rules returned the first name match without applying the later rules as tie-breakers ("Chicken, meatless" for chicken, "Carrot, dehydrated" for carrots). They also picked RACC-only Foundation foods that no household measure can convert. Rules 1 and 4 were added, and the rules now combine as a ranking. Where FDC's top 10 results don't contain the right food at all (chicken, beef, plain flour, brown rice), `overrides.json` is the fix.
 3. **Convert** to grams:
    - `Mass`: already grams.
    - `Volume`: use the food's FDC portion for that unit (`cup`, `tbsp`, `tsp`, `fl oz`, `ml`), deriving the others from any one with 1 cup = 16 tbsp = 48 tsp = 236.6 ml. No volume portion → not counted, reason `noPortion`.

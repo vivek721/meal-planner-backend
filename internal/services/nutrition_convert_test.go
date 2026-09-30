@@ -32,6 +32,37 @@ func TestPickMatchRanking(t *testing.T) {
 	}
 }
 
+// TestPickMatchOnRecordedSearches ranks real FDC search results recorded
+// on 2026-09-30 (testdata/fdc_searches.json) for the sample meals.
+func TestPickMatchOnRecordedSearches(t *testing.T) {
+	var searches map[string][]usda.SearchFood
+	mustLoad(t, "testdata/fdc_searches.json", &searches)
+
+	want := map[string]int{
+		"carrots":      170393, // Carrots, raw — not "Carrot, dehydrated"
+		"red pepper":   170108, // Peppers, sweet, red, raw (SR Legacy has household portions)
+		"garlic":       169230, // Garlic, raw (SR Legacy, not the RACC-only Foundation twin)
+		"green beans":  169961, // Beans, snap, green, raw (SR Legacy)
+		"fennel":       169385, // Fennel, bulb, raw (SR Legacy)
+		"mustard":      172234, // Mustard, prepared, yellow (SR Legacy)
+		"rapeseed oil": 172336, // Oil, canola (SR Legacy)
+		"water":        174158, // Water, bottled, generic — name match beats "Water convolvulus,raw"
+		"onions":       170000, // Onions, raw
+		"lemon":        167746, // Lemons, raw, without peel
+		"salmon":       173688, // Fish, salmon, chinook, raw
+		"chicken":      171116, // Chicken, ground, raw — never "Chicken, meatless"
+	}
+	for name, id := range want {
+		foods, ok := searches[name]
+		if !ok {
+			t.Fatalf("no recorded search for %q", name)
+		}
+		if got := pickMatch(name, foods); got != id {
+			t.Errorf("pickMatch(%q) = %d, want %d", name, got, id)
+		}
+	}
+}
+
 func TestGramsForMass(t *testing.T) {
 	g, ok := gramsFor(measure.Amount{Kind: measure.Mass, Value: 340}, "beef", overrides.Override{}, nil)
 	if !ok || g != 340 {

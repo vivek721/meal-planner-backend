@@ -19,26 +19,58 @@ const (
 	mlPerFlOz = 29.5735
 )
 
+// substituteWords mark foods that stand in for something else, such as
+// "Chicken, meatless": never the ingredient a recipe names.
+var substituteWords = []string{"meatless", "imitation", "substitute"}
+
 // pickMatch chooses the best FDC search result for a normalised ingredient
-// name: first a description whose first comma segment matches the name
-// (singular or plural), then one containing "raw", then FDC's own order.
+// name. Results are ranked, each rule breaking ties in the one before:
+//  1. not a substitute food ("meatless", "imitation", "substitute")
+//  2. the description's first comma segment matches the name (singular or plural)
+//  3. the description contains "raw"
+//  4. SR Legacy before Foundation: Foundation foods often list only a
+//     reference serving (RACC), not the household portions conversion needs
+//  5. FDC's own order
+//
 // 0 means no match.
 func pickMatch(name string, foods []usda.SearchFood) int {
-	if len(foods) == 0 {
-		return 0
-	}
+	best, bestScore := 0, -1
 	for _, f := range foods {
-		seg := strings.ToLower(strings.TrimSpace(strings.SplitN(f.Description, ",", 2)[0]))
-		if seg == name || seg == name+"s" || seg+"s" == name {
-			return f.FDCID
+		if s := matchScore(name, f); s > bestScore {
+			best, bestScore = f.FDCID, s
 		}
 	}
-	for _, f := range foods {
-		if strings.Contains(strings.ToLower(f.Description), "raw") {
-			return f.FDCID
+	return best
+}
+
+// matchScore encodes pickMatch's rules 1-4 as bits, most significant first;
+// the strict comparison in pickMatch keeps FDC's order for equal scores.
+func matchScore(name string, f usda.SearchFood) int {
+	desc := strings.ToLower(f.Description)
+	score := 0
+	if !containsAny(desc, substituteWords) {
+		score |= 8
+	}
+	seg := strings.TrimSpace(strings.SplitN(desc, ",", 2)[0])
+	if seg == name || seg == name+"s" || seg+"s" == name {
+		score |= 4
+	}
+	if strings.Contains(desc, "raw") {
+		score |= 2
+	}
+	if f.DataType == "SR Legacy" {
+		score |= 1
+	}
+	return score
+}
+
+func containsAny(s string, words []string) bool {
+	for _, w := range words {
+		if strings.Contains(s, w) {
+			return true
 		}
 	}
-	return foods[0].FDCID
+	return false
 }
 
 // gramsFor converts a parsed amount of the named ingredient into grams using
@@ -124,12 +156,7 @@ var partWords = []string{
 }
 
 func namesPart(desc string) bool {
-	for _, w := range partWords {
-		if strings.Contains(desc, w) {
-			return true
-		}
-	}
-	return false
+	return containsAny(desc, partWords)
 }
 
 // hasWord reports whether desc contains any of words as a whole token, so
