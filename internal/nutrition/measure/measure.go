@@ -16,7 +16,7 @@ type Kind int
 const (
 	Unmeasurable Kind = iota
 	Mass              // Value is grams
-	Volume            // Value is millilitres
+	Volume            // Value is milliliters
 	Count             // Value is a number of items
 )
 
@@ -33,7 +33,7 @@ var massUnits = map[string]float64{
 }
 
 var volumeUnits = map[string]float64{
-	"ml": 1, "l": 1000, "litre": 1000, "litres": 1000, "liter": 1000, "liters": 1000,
+	"ml": 1, "l": 1000, "litre": 1000, "litres": 1000, "liter": 1000, "liters": 1000, //nolint:misspell // British spellings appear in recipe measures
 	"tsp": 4.92892, "teaspoon": 4.92892, "teaspoons": 4.92892,
 	"tbs": 14.7868, "tbsp": 14.7868, "tablespoon": 14.7868, "tablespoons": 14.7868,
 	"cup": 236.588, "cups": 236.588, "pint": 473.176, "pints": 473.176,
@@ -118,23 +118,22 @@ func parseOfCount(s string) (Amount, bool) {
 
 // parseQuantity reads a leading quantity (integer, decimal, fraction, mixed
 // number or range) and returns it with the remaining text.
-func parseQuantity(s string) (float64, string, bool) {
+func parseQuantity(s string) (qty float64, rest string, ok bool) {
 	fields := strings.Fields(s)
 	if len(fields) == 0 {
 		return 0, "", false
 	}
-	q, ok := parseNumber(fields[0])
-	if !ok {
+	if qty, ok = parseNumber(fields[0]); !ok {
 		return 0, "", false
 	}
-	rest := fields[1:]
-	if len(rest) > 0 { // mixed number: "1 1/2"
-		if f, isFrac := parseFraction(rest[0]); isFrac {
-			q += f
-			rest = rest[1:]
+	words := fields[1:]
+	if len(words) > 0 { // mixed number: "1 1/2"
+		if f, isFrac := parseFraction(words[0]); isFrac {
+			qty += f
+			words = words[1:]
 		}
 	}
-	return q, strings.Join(rest, " "), true
+	return qty, strings.Join(words, " "), true
 }
 
 func parseNumber(tok string) (float64, bool) {

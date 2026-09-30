@@ -48,7 +48,7 @@ func TestSearchSendsFiltersAndKey(t *testing.T) {
 }
 
 func TestSearchErrorsHideTheKey(t *testing.T) {
-	c, srv := newTestClient(func(w http.ResponseWriter, r *http.Request) {
+	c, srv := newTestClient(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusTooManyRequests)
 	})
 	defer srv.Close()
@@ -80,7 +80,7 @@ func TestBuildRequestErrorHidesTheKey(t *testing.T) {
 }
 
 func TestSearchMalformedJSON(t *testing.T) {
-	c, srv := newTestClient(func(w http.ResponseWriter, r *http.Request) {
+	c, srv := newTestClient(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte(`{not json`))
 	})
 	defer srv.Close()
@@ -90,7 +90,7 @@ func TestSearchMalformedJSON(t *testing.T) {
 }
 
 func TestSearchTimeout(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		time.Sleep(200 * time.Millisecond)
 	}))
 	defer srv.Close()
@@ -157,19 +157,25 @@ func TestFoodsEnergyFallback(t *testing.T) {
 		name, nutrients string
 		want            Nutrients
 	}{
-		{"958 preferred over 957",
+		{
+			"958 preferred over 957",
 			`[{"nutrient":{"number":"957"},"amount":100.0},{"nutrient":{"number":"958"},"amount":90.0}]`,
-			Nutrients{Calories: 90}},
-		{"957 alone",
+			Nutrients{Calories: 90},
+		},
+		{
+			"957 alone",
 			`[{"nutrient":{"number":"957"},"amount":100.0}]`,
-			Nutrients{Calories: 100}},
-		{"208 wins over both",
+			Nutrients{Calories: 100},
+		},
+		{
+			"208 wins over both",
 			`[{"nutrient":{"number":"208"},"amount":80.0},{"nutrient":{"number":"958"},"amount":90.0}]`,
-			Nutrients{Calories: 80}},
+			Nutrients{Calories: 80},
+		},
 		{"none: calories absent", `[]`, Nutrients{}},
 	}
 	for _, tc := range cases {
-		c, srv := newTestClient(func(w http.ResponseWriter, r *http.Request) {
+		c, srv := newTestClient(func(w http.ResponseWriter, _ *http.Request) {
 			_, _ = w.Write([]byte(`[{"fdcId":1,"description":"x","dataType":"Foundation","foodNutrients":` + tc.nutrients + `,"foodPortions":[]}]`))
 		})
 		foods, err := c.Foods(context.Background(), []int{1})
@@ -205,7 +211,7 @@ func TestFoodsBatchesOver20IDs(t *testing.T) {
 }
 
 func TestFoodsUpstreamError(t *testing.T) {
-	c, srv := newTestClient(func(w http.ResponseWriter, r *http.Request) {
+	c, srv := newTestClient(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 	})
 	defer srv.Close()

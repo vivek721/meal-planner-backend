@@ -10,7 +10,7 @@ import (
 	"github.com/meal-planner/backend/internal/usda"
 )
 
-// Millilitres per unit, for converting FDC volume portions:
+// Milliliters per unit, for converting FDC volume portions:
 // 1 cup = 16 tbsp = 48 tsp = 236.6 ml.
 const (
 	mlPerCup  = 236.588
@@ -112,7 +112,7 @@ func gramsFor(amt measure.Amount, name string, o overrides.Override, portions []
 	}
 }
 
-// portionMl returns the portion's total volume in millilitres, or 0 when its
+// portionMl returns the portion's total volume in milliliters, or 0 when its
 // text names no known volume unit or its amount is not positive.
 func portionMl(p usda.Portion) float64 {
 	if p.Amount <= 0 {
@@ -129,7 +129,7 @@ func portionMl(p usda.Portion) float64 {
 		unit = mlPerTsp
 	case strings.Contains(desc, "fl oz"), strings.Contains(desc, "fluid ounce"):
 		unit = mlPerFlOz
-	case hasWord(desc, "ml", "milliliter", "milliliters", "millilitre", "millilitres"):
+	case hasWord(desc, "ml", "milliliter", "milliliters", "millilitre", "millilitres"): //nolint:misspell // British spellings appear in FDC portion text
 		unit = 1
 	default:
 		return 0

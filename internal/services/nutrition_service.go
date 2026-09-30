@@ -100,8 +100,7 @@ type nutritionService struct {
 
 // NewNutritionService creates a NutritionService sharing the mealdb_cache
 // table. now is injectable for tests; pass time.Now.
-func NewNutritionService(recipes RecipeService, client usda.Client, cache repository.CacheRepository,
-	ov *overrides.Set, ttl NutritionTTL, now func() time.Time) NutritionService {
+func NewNutritionService(recipes RecipeService, client usda.Client, cache repository.CacheRepository, ov *overrides.Set, ttl NutritionTTL, now func() time.Time) NutritionService {
 	return &nutritionService{
 		recipes: recipes, client: client,
 		rc: newReadCache("nutrition cache", cache, now), ov: ov, ttl: ttl,

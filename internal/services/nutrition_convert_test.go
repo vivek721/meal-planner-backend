@@ -89,7 +89,7 @@ func TestGramsForVolumeUsesAnyVolumePortion(t *testing.T) {
 	// "small" contains the letters "ml" but is not a volume unit.
 	if _, ok := gramsFor(measure.Amount{Kind: measure.Volume, Value: 100}, "x", overrides.Override{},
 		[]usda.Portion{{Amount: 1, Unit: "undetermined", Modifier: "1 small", GramWeight: 30}}); ok {
-		t.Error("'small' must not be read as millilitres")
+		t.Error("'small' must not be read as milliliters")
 	}
 }
 
