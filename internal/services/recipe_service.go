@@ -132,6 +132,7 @@ func cached[T any](ctx context.Context, c *readCache, key string, ttl time.Durat
 			log.Printf("%s: serving stale %q after upstream error: %v", c.name, key, err)
 			return *stale, nil
 		}
+		log.Printf("%s: %q unavailable, nothing cached: %v", c.name, key, err)
 		return zero, fmt.Errorf("%w: %w", ErrUpstreamUnavailable, err)
 	}
 

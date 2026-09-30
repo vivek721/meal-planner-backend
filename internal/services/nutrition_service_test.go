@@ -1,9 +1,12 @@
 package services
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"log"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -221,6 +224,25 @@ func TestEstimateUpstreamFailure(t *testing.T) {
 	f.client.Err = errors.New("fdc down")
 	if _, err := f.svc.Estimate(context.Background(), "6"); !errors.Is(err, ErrUpstreamUnavailable) {
 		t.Fatalf("err = %v, want ErrUpstreamUnavailable", err)
+	}
+}
+
+func TestUpstreamFailureCauseIsLogged(t *testing.T) {
+	f := newNutritionFixture(t, `{}`)
+	f.seedSoySauce()
+	f.seedMeal("13", mealdb.Ingredient{Name: "soy sauce", Measure: "1 tbs"})
+	f.client.FoodsErr = errors.New("usda: /foods: context deadline exceeded")
+
+	var buf bytes.Buffer
+	orig := log.Writer()
+	log.SetOutput(&buf)
+	defer log.SetOutput(orig)
+
+	if _, err := f.svc.Estimate(context.Background(), "13"); !errors.Is(err, ErrUpstreamUnavailable) {
+		t.Fatalf("err = %v", err)
+	}
+	if got := buf.String(); !strings.Contains(got, "context deadline exceeded") {
+		t.Errorf("log = %q, want the upstream cause of the 503", got)
 	}
 }
 
