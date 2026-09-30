@@ -1,1 +1,12 @@
-{}
+{
+  "chicken": { "itemGrams": 1500, "note": "one whole raw chicken, meat and skin" },
+  "chicken breasts": { "itemGrams": 174, "note": "one boneless skinless breast" },
+  "chicken thighs": { "itemGrams": 116, "note": "one bone-in thigh" },
+  "garlic": { "itemGrams": 3, "note": "one clove; TheMealDB counts cloves ('8 cloves chopped')" },
+  "garlic clove": { "itemGrams": 3 },
+  "egg yolks": { "itemGrams": 17, "note": "one large egg yolk" },
+  "egg whites": { "itemGrams": 33, "note": "one large egg white" },
+  "spring onions": { "itemGrams": 15, "note": "one whole spring onion" },
+  "shallots": { "itemGrams": 25, "note": "one whole shallot" },
+  "challots": { "itemGrams": 25, "note": "TheMealDB's spelling of shallots in some recipes" }
+}
