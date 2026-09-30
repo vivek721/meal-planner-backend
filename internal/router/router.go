@@ -12,23 +12,33 @@ import (
 	"github.com/meal-planner/backend/internal/handlers"
 	"github.com/meal-planner/backend/internal/mealdb"
 	"github.com/meal-planner/backend/internal/middleware"
+	"github.com/meal-planner/backend/internal/nutrition/overrides"
 	"github.com/meal-planner/backend/internal/repository"
 	"github.com/meal-planner/backend/internal/services"
+	"github.com/meal-planner/backend/internal/usda"
 )
 
 // Setup initializes and configures the router backed by the given database.
-func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
+func Setup(db *gorm.DB, cfg *config.Config, ov *overrides.Set) *gin.Engine {
+	cache := repository.NewCacheRepository(db)
 	recipes := services.NewRecipeService(
 		mealdb.NewHTTPClient(cfg.MealDBBaseURL, cfg.MealDBTimeout),
-		repository.NewCacheRepository(db),
+		cache,
 		services.RecipeCacheTTL{Detail: cfg.MealDBDetailTTL, Search: cfg.MealDBSearchTTL},
 		time.Now,
 	)
-	return New(repository.NewUserRepository(db), recipes, cfg)
+	nutrition := services.NewNutritionService(
+		recipes,
+		usda.NewHTTPClient(cfg.USDABaseURL, cfg.USDAAPIKey, cfg.USDATimeout),
+		cache, ov,
+		services.NutritionTTL{Match: cfg.USDAMatchTTL, Food: cfg.USDAFoodTTL, Result: cfg.NutritionTTL},
+		time.Now,
+	)
+	return New(repository.NewUserRepository(db), recipes, nutrition, cfg)
 }
 
-// New builds the router on top of the given user repository and recipe service.
-func New(userRepo repository.UserRepository, recipes services.RecipeService, cfg *config.Config) *gin.Engine {
+// New builds the router on top of the given repositories and services.
+func New(userRepo repository.UserRepository, recipes services.RecipeService, nutrition services.NutritionService, cfg *config.Config) *gin.Engine {
 	// Set Gin mode based on environment
 	if cfg.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
@@ -72,6 +82,7 @@ func New(userRepo repository.UserRepository, recipes services.RecipeService, cfg
 					"detail":     "GET /api/recipes/:id (protected)",
 					"categories": "GET /api/recipes/categories (protected)",
 					"cuisines":   "GET /api/recipes/cuisines (protected)",
+					"nutrition":  "GET /api/recipes/:id/nutrition (protected)",
 				},
 			},
 		})
@@ -85,6 +96,7 @@ func New(userRepo repository.UserRepository, recipes services.RecipeService, cfg
 	authHandler := handlers.NewAuthHandler(authService)
 	userHandler := handlers.NewUserHandler(userService)
 	recipeHandler := handlers.NewRecipeHandler(recipes)
+	nutritionHandler := handlers.NewNutritionHandler(nutrition)
 
 	// API routes
 	api := router.Group("/api")
@@ -116,6 +128,7 @@ func New(userRepo repository.UserRepository, recipes services.RecipeService, cfg
 		recipeRoutes.GET("/categories", recipeHandler.Categories)
 		recipeRoutes.GET("/cuisines", recipeHandler.Cuisines)
 		recipeRoutes.GET("/:id", recipeHandler.Get)
+		recipeRoutes.GET("/:id/nutrition", nutritionHandler.Get)
 	}
 
 	return router

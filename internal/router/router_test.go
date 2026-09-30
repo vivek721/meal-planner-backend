@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/meal-planner/backend/internal/config"
+	"github.com/meal-planner/backend/internal/nutrition/overrides"
 	"github.com/meal-planner/backend/internal/services"
 	"github.com/meal-planner/backend/internal/testutil"
 )
@@ -17,6 +18,21 @@ import (
 func testRecipes() services.RecipeService {
 	return services.NewRecipeService(testutil.NewMealDBClient(), testutil.NewCacheRepo(),
 		services.RecipeCacheTTL{Detail: time.Hour, Search: time.Hour}, time.Now)
+}
+
+func testOverrides(t *testing.T) *overrides.Set {
+	t.Helper()
+	ov, err := overrides.Parse([]byte("{}"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return ov
+}
+
+func testNutrition(t *testing.T, recipes services.RecipeService) services.NutritionService {
+	t.Helper()
+	return services.NewNutritionService(recipes, testutil.NewUSDAClient(), testutil.NewCacheRepo(),
+		testOverrides(t), services.NutritionTTL{Match: time.Hour, Food: time.Hour, Result: time.Hour}, time.Now)
 }
 
 func get(t *testing.T, engine *gin.Engine, path string) *httptest.ResponseRecorder {
@@ -28,7 +44,8 @@ func get(t *testing.T, engine *gin.Engine, path string) *httptest.ResponseRecord
 
 func TestPublicEndpoints(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	engine := New(testutil.NewUserRepo(), testRecipes(), testConfig("test"))
+	recipes := testRecipes()
+	engine := New(testutil.NewUserRepo(), recipes, testNutrition(t, recipes), testConfig("test"))
 
 	w := get(t, engine, "/health")
 	if w.Code != http.StatusOK || w.Body.String() != `{"service":"meal-planner-api","status":"healthy"}` {
@@ -55,7 +72,7 @@ func TestPublicEndpoints(t *testing.T) {
 
 func TestProtectedRoutesRequireAuth(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	engine := Setup(nil, testConfig("test"))
+	engine := Setup(nil, testConfig("test"), testOverrides(t))
 
 	routes := []struct{ method, path string }{
 		{http.MethodGet, "/api/auth/me"},
@@ -76,7 +93,8 @@ func TestProtectedRoutesRequireAuth(t *testing.T) {
 
 func TestProductionSetsReleaseMode(t *testing.T) {
 	t.Cleanup(func() { gin.SetMode(gin.TestMode) })
-	New(testutil.NewUserRepo(), testRecipes(), testConfig("production"))
+	recipes := testRecipes()
+	New(testutil.NewUserRepo(), recipes, testNutrition(t, recipes), testConfig("production"))
 	if gin.Mode() != gin.ReleaseMode {
 		t.Errorf("gin.Mode() = %q, want release", gin.Mode())
 	}

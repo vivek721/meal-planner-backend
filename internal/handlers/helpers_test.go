@@ -12,6 +12,7 @@ import (
 
 	"github.com/meal-planner/backend/internal/config"
 	"github.com/meal-planner/backend/internal/models"
+	"github.com/meal-planner/backend/internal/nutrition/overrides"
 	"github.com/meal-planner/backend/internal/router"
 	"github.com/meal-planner/backend/internal/services"
 	"github.com/meal-planner/backend/internal/testutil"
@@ -31,6 +32,7 @@ type testServer struct {
 	engine *gin.Engine
 	repo   *testutil.UserRepo
 	mealdb *testutil.MealDBClient
+	usda   *testutil.USDAClient
 }
 
 func newTestServer(t *testing.T) *testServer {
@@ -44,9 +46,20 @@ func newTestServer(t *testing.T) *testServer {
 	}
 	repo := testutil.NewUserRepo()
 	client := testutil.NewMealDBClient()
-	recipes := services.NewRecipeService(client, testutil.NewCacheRepo(),
+	cache := testutil.NewCacheRepo()
+	recipes := services.NewRecipeService(client, cache,
 		services.RecipeCacheTTL{Detail: time.Hour, Search: time.Hour}, time.Now)
-	return &testServer{engine: router.New(repo, recipes, cfg), repo: repo, mealdb: client}
+	usdaClient := testutil.NewUSDAClient()
+	ov, err := overrides.Parse([]byte("{}"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	nutrition := services.NewNutritionService(recipes, usdaClient, cache, ov,
+		services.NutritionTTL{Match: time.Hour, Food: time.Hour, Result: time.Hour}, time.Now)
+	return &testServer{
+		engine: router.New(repo, recipes, nutrition, cfg),
+		repo:   repo, mealdb: client, usda: usdaClient,
+	}
 }
 
 // seedUser stores a user with testPassword and returns it with a valid token.

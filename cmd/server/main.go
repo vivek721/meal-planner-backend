@@ -11,6 +11,7 @@ import (
 
 	"github.com/meal-planner/backend/internal/config"
 	"github.com/meal-planner/backend/internal/database"
+	"github.com/meal-planner/backend/internal/nutrition/overrides"
 	"github.com/meal-planner/backend/internal/repository"
 	"github.com/meal-planner/backend/internal/router"
 	"github.com/meal-planner/backend/internal/services"
@@ -25,6 +26,18 @@ func main() {
 	// Load configuration
 	cfg := config.Load()
 
+	// Validate the committed nutrition overrides before serving anything:
+	// running with silently-broken overrides would mis-estimate every recipe.
+	ov, err := overrides.Load()
+	if err != nil {
+		log.Fatalf("Invalid nutrition overrides: %v", err)
+	}
+	if cfg.USDAAPIKey == "DEMO_KEY" {
+		log.Println("USDA_API_KEY not set: using DEMO_KEY (10 requests/hour)")
+	} else {
+		log.Println("USDA_API_KEY is set")
+	}
+
 	// Initialize database connection
 	db, err := database.NewConnection(cfg)
 	if err != nil {
@@ -37,7 +50,7 @@ func main() {
 	}
 
 	// Initialize router with dependencies
-	r := router.Setup(db, cfg)
+	r := router.Setup(db, cfg, ov)
 
 	// Purge long-expired mealdb_cache rows once at startup and then every
 	// CachePurgeInterval. The server has no graceful-shutdown path today, so
