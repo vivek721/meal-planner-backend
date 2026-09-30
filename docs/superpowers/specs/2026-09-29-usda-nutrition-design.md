@@ -149,6 +149,7 @@ Everything reuses Part 1's `mealdb_cache` table and its generic `cached[T]` read
 - Units: `calories` in kcal (integer), `sodium` in mg (integer), and everything else in grams to one decimal place.
 - `incomplete` lists the nutrients some counted ingredient lacked, so the total may be low. It is omitted when empty.
 - `reason` is one of `unmeasurable`, `noMatch` or `noPortion`.
+- On a `counted` line, `grams` is always present, even when it rounds to 0. `calories` is present whenever FDC reports energy for the food, including 0 (water), and absent when it doesn't. A `notCounted` line has neither field. *(Amended 2026-09-30: both fields were previously dropped when 0, so "0 kcal" looked the same as "not reported".)*
 - `ingredients` keeps the recipe's order.
 
 | Case | Status | Body |
