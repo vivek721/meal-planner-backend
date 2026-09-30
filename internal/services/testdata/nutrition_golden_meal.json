@@ -1,0 +1,21 @@
+{
+  "id": "52772",
+  "name": "Teriyaki Chicken Casserole",
+  "category": "Chicken",
+  "cuisine": "Japanese",
+  "thumbnail": "",
+  "ingredients": [
+    { "name": "soy sauce", "measure": "3/4 cup" },
+    { "name": "water", "measure": "1/2 cup" },
+    { "name": "brown sugar", "measure": "1/4 cup" },
+    { "name": "ground ginger", "measure": "1/2 teaspoon" },
+    { "name": "minced garlic", "measure": "1/2 teaspoon" },
+    { "name": "honey", "measure": "4 Tablespoons" },
+    { "name": "chicken breasts", "measure": "2" },
+    { "name": "stir-fry vegetables", "measure": "1 (12 oz.)" },
+    { "name": "brown rice", "measure": "3 cups" },
+    { "name": "salt", "measure": "pinch" }
+  ],
+  "instructions": ["Cook."],
+  "tags": []
+}
