@@ -47,3 +47,7 @@ gosec-report.json
 
 # Backup files
 *.bak
+
+# Claude worktrees and SDD scratch
+.claude/worktrees/
+.superpowers/
