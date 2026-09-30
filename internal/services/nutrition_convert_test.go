@@ -1,0 +1,119 @@
+package services
+
+import (
+	"testing"
+
+	"github.com/meal-planner/backend/internal/nutrition/measure"
+	"github.com/meal-planner/backend/internal/nutrition/overrides"
+	"github.com/meal-planner/backend/internal/usda"
+)
+
+func TestPickMatchRanking(t *testing.T) {
+	foods := []usda.SearchFood{
+		{FDCID: 1, Description: "Soup, chicken noodle, canned"},
+		{FDCID: 2, Description: "Chicken breast, raw"},
+		{FDCID: 3, Description: "Chicken breasts, oven-roasted"},
+	}
+	// 1st rule: first comma segment equals the name (singular or plural).
+	if got := pickMatch("chicken breasts", foods); got != 2 {
+		t.Errorf("segment match (plural tolerant) = %d, want 2", got)
+	}
+	// 2nd rule: contains "raw".
+	if got := pickMatch("poultry", foods); got != 2 {
+		t.Errorf("raw preference = %d, want 2", got)
+	}
+	// 3rd rule: FDC's own order.
+	cooked := []usda.SearchFood{{FDCID: 7, Description: "Soup, canned"}, {FDCID: 8, Description: "Broth, cubes"}}
+	if got := pickMatch("stock", cooked); got != 7 {
+		t.Errorf("fallback order = %d, want 7", got)
+	}
+	if got := pickMatch("anything", nil); got != 0 {
+		t.Errorf("no results = %d, want 0", got)
+	}
+}
+
+func TestGramsForMass(t *testing.T) {
+	g, ok := gramsFor(measure.Amount{Kind: measure.Mass, Value: 340}, "beef", overrides.Override{}, nil)
+	if !ok || g != 340 {
+		t.Errorf("mass = %v, %v", g, ok)
+	}
+}
+
+func TestGramsForVolumeUsesAnyVolumePortion(t *testing.T) {
+	// Only a tbsp portion exists (1 tbsp = 16 g); 177.44 ml (3/4 cup) of it:
+	// 177.44 * 16 / 14.7868 = 192.0 g.
+	portions := []usda.Portion{
+		{Amount: 1, Unit: "slice", Modifier: "", GramWeight: 28},
+		{Amount: 1, Unit: "tbsp", Modifier: "", GramWeight: 16},
+	}
+	g, ok := gramsFor(measure.Amount{Kind: measure.Volume, Value: 177.44}, "soy sauce", overrides.Override{}, portions)
+	if !ok || g < 191 || g > 193 {
+		t.Errorf("volume = %v, %v; want about 192", g, ok)
+	}
+	// No volume portion at all -> not counted.
+	if _, ok := gramsFor(measure.Amount{Kind: measure.Volume, Value: 100}, "x", overrides.Override{},
+		[]usda.Portion{{Amount: 1, Unit: "slice", GramWeight: 28}}); ok {
+		t.Error("no volume portion must fail")
+	}
+	// "small" contains the letters "ml" but is not a volume unit.
+	if _, ok := gramsFor(measure.Amount{Kind: measure.Volume, Value: 100}, "x", overrides.Override{},
+		[]usda.Portion{{Amount: 1, Unit: "undetermined", Modifier: "1 small", GramWeight: 30}}); ok {
+		t.Error("'small' must not be read as millilitres")
+	}
+}
+
+func TestGramsForCount(t *testing.T) {
+	// Override itemGrams wins.
+	g, ok := gramsFor(measure.Amount{Kind: measure.Count, Value: 2}, "chicken breasts",
+		overrides.Override{ItemGrams: 174}, nil)
+	if !ok || g != 348 {
+		t.Errorf("override count = %v, %v", g, ok)
+	}
+	// Portion whose text names one item: unit/modifier containing whole,
+	// large, medium, fruit, unit, or the name's own last word.
+	portions := []usda.Portion{
+		{Amount: 1, Unit: "cup", Modifier: "chopped", GramWeight: 140},
+		{Amount: 1, Unit: "undetermined", Modifier: "breast, bone removed", GramWeight: 172},
+	}
+	g, ok = gramsFor(measure.Amount{Kind: measure.Count, Value: 2}, "chicken breasts", overrides.Override{}, portions)
+	if !ok || g != 344 {
+		t.Errorf("last-word portion = %v, %v; want 344", g, ok)
+	}
+	g, ok = gramsFor(measure.Amount{Kind: measure.Count, Value: 3},
+		"lemon", overrides.Override{}, []usda.Portion{{Amount: 1, Unit: "fruit", GramWeight: 58}})
+	if !ok || g != 174 {
+		t.Errorf("fruit portion = %v, %v", g, ok)
+	}
+	// Nothing usable -> not counted.
+	if _, ok := gramsFor(measure.Amount{Kind: measure.Count, Value: 1}, "saffron", overrides.Override{},
+		[]usda.Portion{{Amount: 1, Unit: "cup", GramWeight: 100}}); ok {
+		t.Error("count with no item portion must fail")
+	}
+}
+
+func TestGramsForSkipsZeroWeightPortions(t *testing.T) {
+	// gramWeight or amount of 0 must be skipped, never divided by.
+	bad := []usda.Portion{
+		{Amount: 0, Unit: "cup", GramWeight: 0},
+		{Amount: 1, Unit: "cup", GramWeight: 0},
+	}
+	if _, ok := gramsFor(measure.Amount{Kind: measure.Volume, Value: 100}, "x", overrides.Override{}, bad); ok {
+		t.Error("zero-weight volume portions must be unusable")
+	}
+	if _, ok := gramsFor(measure.Amount{Kind: measure.Count, Value: 1}, "lemon", overrides.Override{},
+		[]usda.Portion{{Amount: 0, Unit: "fruit", GramWeight: 0}}); ok {
+		t.Error("zero-weight count portions must be unusable")
+	}
+}
+
+func TestGramsForUnmeasurable(t *testing.T) {
+	if _, ok := gramsFor(measure.Amount{Kind: measure.Unmeasurable}, "salt", overrides.Override{}, nil); ok {
+		t.Error("unmeasurable must never convert")
+	}
+}
+
+func TestRound1(t *testing.T) {
+	if round1(191.2599) != 191.3 || round1(2.04) != 2.0 {
+		t.Error("round1 must round to one decimal")
+	}
+}
