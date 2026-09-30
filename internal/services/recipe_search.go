@@ -50,7 +50,7 @@ func (s *recipeService) searchByName(ctx context.Context, q RecipeQuery) ([]Reci
 	g, gctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
 		var err error
-		meals, err = cached(gctx, s, "search:q="+strings.ToLower(q.Q), s.ttl.Search, func(ctx context.Context) ([]mealdb.Meal, error) {
+		meals, err = cached(gctx, s.rc, "search:q="+strings.ToLower(q.Q), s.ttl.Search, func(ctx context.Context) ([]mealdb.Meal, error) {
 			return s.client.Search(ctx, q.Q)
 		})
 		return err
@@ -148,7 +148,7 @@ next:
 // "Beef", "beef" and "BEEF" share one entry and one upstream call.
 func (s *recipeService) filter(ctx context.Context, kind mealdb.FilterKind, value string) ([]mealdb.MealRef, error) {
 	key := "filter:" + string(kind) + "=" + normalizeFilterValue(value)
-	return cached(ctx, s, key, s.ttl.Search, func(ctx context.Context) ([]mealdb.MealRef, error) {
+	return cached(ctx, s.rc, key, s.ttl.Search, func(ctx context.Context) ([]mealdb.MealRef, error) {
 		return s.client.Filter(ctx, kind, value)
 	})
 }
@@ -176,7 +176,7 @@ func (s *recipeService) canonicalCategory(ctx context.Context, name string) stri
 
 // canonicalCuisine is canonicalCategory for cuisines (TheMealDB's "areas").
 func (s *recipeService) canonicalCuisine(ctx context.Context, name string) string {
-	areas, err := cached(ctx, s, "areas", s.ttl.Detail, s.client.Areas)
+	areas, err := cached(ctx, s.rc, "areas", s.ttl.Detail, s.client.Areas)
 	if err != nil {
 		return name
 	}

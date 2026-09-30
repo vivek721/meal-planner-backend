@@ -180,3 +180,35 @@ func TestLoadMealDBOverrides(t *testing.T) {
 		t.Errorf("overrides not applied: %+v", cfg)
 	}
 }
+
+func TestUSDADefaults(t *testing.T) {
+	for _, key := range []string{
+		"USDA_API_KEY", "USDA_BASE_URL", "USDA_TIMEOUT_SECONDS",
+		"USDA_MATCH_TTL_HOURS", "USDA_FOOD_TTL_HOURS", "NUTRITION_TTL_HOURS",
+	} {
+		t.Setenv(key, "")
+	}
+	cfg := Load()
+	if cfg.USDAAPIKey != "DEMO_KEY" {
+		t.Errorf("USDAAPIKey = %q", cfg.USDAAPIKey)
+	}
+	if cfg.USDABaseURL != "https://api.nal.usda.gov/fdc/v1" {
+		t.Errorf("USDABaseURL = %q", cfg.USDABaseURL)
+	}
+	if cfg.USDATimeout != 15*time.Second {
+		t.Errorf("USDATimeout = %v", cfg.USDATimeout)
+	}
+	if cfg.USDAMatchTTL != 720*time.Hour || cfg.USDAFoodTTL != 2160*time.Hour || cfg.NutritionTTL != 168*time.Hour {
+		t.Errorf("TTLs = %v %v %v", cfg.USDAMatchTTL, cfg.USDAFoodTTL, cfg.NutritionTTL)
+	}
+}
+
+func TestUSDAOverrides(t *testing.T) {
+	t.Setenv("USDA_API_KEY", "real-key")
+	t.Setenv("USDA_TIMEOUT_SECONDS", "9")
+	t.Setenv("NUTRITION_TTL_HOURS", "1")
+	cfg := Load()
+	if cfg.USDAAPIKey != "real-key" || cfg.USDATimeout != 9*time.Second || cfg.NutritionTTL != time.Hour {
+		t.Errorf("USDA overrides not applied: key=%q timeout=%v ttl=%v", cfg.USDAAPIKey, cfg.USDATimeout, cfg.NutritionTTL)
+	}
+}

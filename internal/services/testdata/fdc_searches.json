@@ -1,0 +1,2031 @@
+{
+ "chicken": [
+  {
+   "fdcId": 173858,
+   "description": "Chicken spread",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169886,
+   "description": "Chicken, meatless",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173564,
+   "description": "Fat, chicken",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171624,
+   "description": "Frankfurter, chicken",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173321,
+   "description": "Fast foods, chicken tenders",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173873,
+   "description": "Bologna, chicken, pork",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172957,
+   "description": "Bratwurst, chicken, cooked",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171110,
+   "description": "Chicken, canned, no broth",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171119,
+   "description": "Chicken, feet, boiled",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171116,
+   "description": "Chicken, ground, raw",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "chicken breasts": [
+  {
+   "fdcId": 2759004,
+   "description": "Lunchmeat, chicken breast, sliced",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 171515,
+   "description": "Chicken breast tenders, breaded, uncooked",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 174608,
+   "description": "Chicken breast, roll, oven-roasted",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 2646170,
+   "description": "Chicken, breast, boneless, skinless, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 2727569,
+   "description": "Chicken, breast, meat and skin, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 171514,
+   "description": "Chicken breast tenders, breaded, cooked, microwaved",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172945,
+   "description": "Oscar Mayer, Chicken Breast (honey glazed)",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173874,
+   "description": "Chicken breast, deli, rotisserie seasoned, sliced, prepackaged",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172962,
+   "description": "Chicken breast, fat-free, mesquite flavor, sliced",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172963,
+   "description": "Chicken breast, oven-roasted, fat-free, sliced",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "beef": [
+  {
+   "fdcId": 170602,
+   "description": "Beef, cured, corned beef, canned",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170200,
+   "description": "Beef, cured, corned beef, brisket, cooked",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170199,
+   "description": "Beef, cured, corned beef, brisket, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172012,
+   "description": "Bologna, beef",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 2758991,
+   "description": "Bologna, beef",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 173332,
+   "description": "Beef, corned beef hash, with potato, canned",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173086,
+   "description": "Beef, New Zealand, imported, manufacturing beef, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 174730,
+   "description": "Beef, New Zealand, imported, manufacturing beef, cooked, boiled",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 168630,
+   "description": "Beef, variety meats and by-products, mechanically separated beef, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 174602,
+   "description": "Bacon and beef sticks",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "beef stock": [
+  {
+   "fdcId": 172883,
+   "description": "Soup, stock, beef, home-prepared",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171156,
+   "description": "Soup, mushroom with beef stock, canned, condensed",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 174558,
+   "description": "Soup, mushroom with beef stock, canned, prepared with equal volume water",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172884,
+   "description": "Soup, stock, chicken, home-prepared",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172885,
+   "description": "Soup, stock, fish, home-prepared",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170602,
+   "description": "Beef, cured, corned beef, canned",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170200,
+   "description": "Beef, cured, corned beef, brisket, cooked",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170199,
+   "description": "Beef, cured, corned beef, brisket, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172012,
+   "description": "Bologna, beef",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 2758991,
+   "description": "Bologna, beef",
+   "dataType": "Foundation"
+  }
+ ],
+ "plain flour": [
+  {
+   "fdcId": 170249,
+   "description": "Snacks, pretzels, hard, plain, made with enriched flour, unsalted",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170650,
+   "description": "Snacks, pretzels, hard, plain, made with unenriched flour, salted",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170651,
+   "description": "Snacks, pretzels, hard, plain, made with unenriched flour, unsalted",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172751,
+   "description": "Croutons, plain",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170684,
+   "description": "Arrowroot flour",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173755,
+   "description": "Carob flour",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 2003586,
+   "description": "Flour, 00",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 2261420,
+   "description": "Flour, almond",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 2512371,
+   "description": "Flour, amaranth",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 2512376,
+   "description": "Flour, barley",
+   "dataType": "Foundation"
+  }
+ ],
+ "carrots": [
+  {
+   "fdcId": 170500,
+   "description": "Carrot, dehydrated",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170393,
+   "description": "Carrots, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169871,
+   "description": "Babyfood, carrots, toddler",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170491,
+   "description": "Carrot juice, canned",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 2258587,
+   "description": "Carrots, baby, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 168568,
+   "description": "Carrots, baby, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 746764,
+   "description": "Carrots, frozen, unprepared",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 2258586,
+   "description": "Carrots, mature, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 173518,
+   "description": "Babyfood, carrots and beef, strained",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169043,
+   "description": "Babyfood, juice, orange-carrot",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "red wine": [
+  {
+   "fdcId": 172240,
+   "description": "Vinegar, red wine",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173190,
+   "description": "Alcoholic beverage, wine, table, red",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173191,
+   "description": "Alcoholic Beverage, wine, table, red, Barbera",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173208,
+   "description": "Alcoholic Beverage, wine, table, red, Burgundy",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 174840,
+   "description": "Alcoholic Beverage, wine, table, red, Carignane",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173194,
+   "description": "Alcoholic Beverage, wine, table, red, Claret",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171872,
+   "description": "Alcoholic Beverage, wine, table, red, Gamay",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 174838,
+   "description": "Alcoholic Beverage, wine, table, red, Lemberger",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171925,
+   "description": "Alcoholic Beverage, wine, table, red, Merlot",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 174109,
+   "description": "Alcoholic Beverage, wine, table, red, Mouvedre",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "butter": [
+  {
+   "fdcId": 171314,
+   "description": "Butter, Clarified butter (ghee)",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173410,
+   "description": "Butter, salted",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 174987,
+   "description": "Croissants, butter",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 2262074,
+   "description": "Almond butter, creamy",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 173412,
+   "description": "Butter oil, anhydrous",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 790508,
+   "description": "Butter, stick, salted",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 789828,
+   "description": "Butter, stick, unsalted",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 173411,
+   "description": "Butter, whipped, with salt",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173430,
+   "description": "Butter, without salt",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 168816,
+   "description": "Fruit butters, apple",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "cherry tomatoes": [
+  {
+   "fdcId": 170461,
+   "description": "Tomato powder",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 1999634,
+   "description": "Tomato, roma",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 170463,
+   "description": "Tomato products, canned, sauce, with tomato tidbits",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170051,
+   "description": "Tomatoes, red, ripe, canned, packed in tomato juice",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171719,
+   "description": "Cherries, sweet, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 167807,
+   "description": "Cherry juice, tart",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 2685582,
+   "description": "Tomato, puree, canned",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 170501,
+   "description": "Tomatoes, crushed, canned",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 2685581,
+   "description": "Tomatoes, crushed, canned",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 321360,
+   "description": "Tomatoes, grape, raw",
+   "dataType": "Foundation"
+  }
+ ],
+ "coriander seeds": [
+  {
+   "fdcId": 170922,
+   "description": "Spices, coriander seed",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169997,
+   "description": "Coriander (cilantro) leaves, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170921,
+   "description": "Spices, coriander leaf, dried",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172242,
+   "description": "Seasoning mix, dry, sazon, coriander & annatto",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170145,
+   "description": "Seeds, breadfruit seeds, boiled",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170144,
+   "description": "Seeds, breadfruit seeds, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170595,
+   "description": "Seeds, breadfruit seeds, roasted",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170554,
+   "description": "Seeds, chia seeds, dried",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170148,
+   "description": "Seeds, hemp seed, hulled",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170149,
+   "description": "Seeds, lotus seeds, dried",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "brown rice": [
+  {
+   "fdcId": 1104812,
+   "description": "Flour, rice, brown",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 168898,
+   "description": "Rice flour, brown",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 167967,
+   "description": "Snacks, rice cakes, brown rice, buckwheat",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169679,
+   "description": "Snacks, rice cakes, brown rice, corn",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169680,
+   "description": "Snacks, rice cakes, brown rice, multigrain",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 168855,
+   "description": "Snacks, rice cakes, brown rice, rye",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 167966,
+   "description": "Snacks, rice cracker brown rice, plain",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169865,
+   "description": "Babyfood, peas and brown rice",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173155,
+   "description": "Snacks, brown rice chips",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170251,
+   "description": "Snacks, rice cakes, brown rice, buckwheat, unsalted",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "tomato": [
+  {
+   "fdcId": 170461,
+   "description": "Tomato powder",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 1999634,
+   "description": "Tomato, roma",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 170463,
+   "description": "Tomato products, canned, sauce, with tomato tidbits",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170051,
+   "description": "Tomatoes, red, ripe, canned, packed in tomato juice",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 2685582,
+   "description": "Tomato, puree, canned",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 170501,
+   "description": "Tomatoes, crushed, canned",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 2685581,
+   "description": "Tomatoes, crushed, canned",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 321360,
+   "description": "Tomatoes, grape, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 170456,
+   "description": "Tomatoes, green, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170502,
+   "description": "Tomatoes, orange, raw",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "tomatoes": [
+  {
+   "fdcId": 170461,
+   "description": "Tomato powder",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 1999634,
+   "description": "Tomato, roma",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 170463,
+   "description": "Tomato products, canned, sauce, with tomato tidbits",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170051,
+   "description": "Tomatoes, red, ripe, canned, packed in tomato juice",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 2685582,
+   "description": "Tomato, puree, canned",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 170501,
+   "description": "Tomatoes, crushed, canned",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 2685581,
+   "description": "Tomatoes, crushed, canned",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 321360,
+   "description": "Tomatoes, grape, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 170456,
+   "description": "Tomatoes, green, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170502,
+   "description": "Tomatoes, orange, raw",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "red pepper": [
+  {
+   "fdcId": 2258590,
+   "description": "Peppers, bell, red, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 170108,
+   "description": "Peppers, sweet, red, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 168550,
+   "description": "Peppers, sweet, red, sauteed",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170932,
+   "description": "Spices, pepper, red or cayenne",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170106,
+   "description": "Peppers, hot chili, red, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169373,
+   "description": "Peppers, sweet, red, freeze-dried",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 168546,
+   "description": "Peppers, sweet, red, canned, solids and liquids",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 168547,
+   "description": "Peppers, sweet, red, frozen, chopped, unprepared",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169218,
+   "description": "Corn with red and green peppers, canned, solids and liquids",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170515,
+   "description": "Peppers, sweet, red, cooked, boiled, drained, with salt",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "soy sauce": [
+  {
+   "fdcId": 174278,
+   "description": "Soy sauce made from soy (tamari)",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 174277,
+   "description": "Soy sauce made from soy and wheat (shoyu)",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172473,
+   "description": "Soy sauce made from soy and wheat (shoyu), low sodium",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172369,
+   "description": "Margarine, industrial, soy and partially hydrogenated soy oil, use for baking, sauces and candy",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 174070,
+   "description": "Sauce, peanut, made from peanut butter, water, soy sauce",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 174279,
+   "description": "Soy sauce made from hydrolyzed vegetable protein",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 1104705,
+   "description": "Flour, soy, defatted",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 174275,
+   "description": "Soy flour, defatted",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 174276,
+   "description": "Soy protein isolate",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172474,
+   "description": "Soy sauce, reduced sodium, made from hydrolyzed vegetable protein",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "vegetable oil": [
+  {
+   "fdcId": 172370,
+   "description": "Oil, vegetable, soybean, refined",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171422,
+   "description": "Vegetable oil, palm kernel",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173566,
+   "description": "Shortening industrial, lard and vegetable oil",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172327,
+   "description": "Shortening, household, lard and vegetable oil",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 167691,
+   "description": "Vegetable oil-butter spread, reduced calorie",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170698,
+   "description": "Fast foods, potato, french fried in vegetable oil",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170861,
+   "description": "Milk, filled, fluid, with blend of hydrogenated vegetable oils",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171261,
+   "description": "Cream substitute, liquid, with hydrogenated vegetable oil and soy protein",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172354,
+   "description": "Margarine-like, vegetable oil spread, 20% fat, with salt",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172353,
+   "description": "Margarine-like, vegetable oil spread, fat-free, tub",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "onion": [
+  {
+   "fdcId": 170000,
+   "description": "Onions, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169844,
+   "description": "DENNY'S, onion rings",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170002,
+   "description": "Onions, dehydrated flakes",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 790577,
+   "description": "Onions, red, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 170008,
+   "description": "Onions, sweet, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170007,
+   "description": "Onions, welsh, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 1104962,
+   "description": "Onions, white, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 790646,
+   "description": "Onions, yellow, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 170004,
+   "description": "Onions, yellow, sauteed",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171327,
+   "description": "Spices, onion powder",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "onions": [
+  {
+   "fdcId": 170000,
+   "description": "Onions, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169844,
+   "description": "DENNY'S, onion rings",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170002,
+   "description": "Onions, dehydrated flakes",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 790577,
+   "description": "Onions, red, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 170008,
+   "description": "Onions, sweet, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170007,
+   "description": "Onions, welsh, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 1104962,
+   "description": "Onions, white, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 790646,
+   "description": "Onions, yellow, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 170004,
+   "description": "Onions, yellow, sauteed",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171327,
+   "description": "Spices, onion powder",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "garlic": [
+  {
+   "fdcId": 1104647,
+   "description": "Garlic, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 169230,
+   "description": "Garlic, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 167939,
+   "description": "Garlic bread, frozen",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171325,
+   "description": "Spices, garlic powder",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170789,
+   "description": "PIZZA HUT, breadstick, parmesan garlic",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170788,
+   "description": "Fast foods, breadstick, soft, prepared with garlic and parmesan cheese",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 168318,
+   "description": "HORMEL ALWAYS TENDER, Pork Loin Filets, Lemon Garlic-Flavored",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 167782,
+   "description": "Abiyuch, raw",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "salmon": [
+  {
+   "fdcId": 172343,
+   "description": "Fish oil, salmon",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173688,
+   "description": "Fish, salmon, chinook, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173687,
+   "description": "Fish, salmon, chinook, smoked",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173689,
+   "description": "Fish, salmon, chum, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 175138,
+   "description": "Fish, salmon, pink, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173691,
+   "description": "Fish, salmon, sockeye, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 175167,
+   "description": "Fish, salmon, Atlantic, farmed, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173686,
+   "description": "Fish, salmon, Atlantic, wild, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173715,
+   "description": "Fish, salmon, coho, farmed, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 175136,
+   "description": "Fish, salmon, coho, wild, raw",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "lemon": [
+  {
+   "fdcId": 167802,
+   "description": "Lemon juice from concentrate, bottled, REAL LEMON",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 167747,
+   "description": "Lemon juice, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 167749,
+   "description": "Lemon peel, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172827,
+   "description": "Danish pastry, lemon, unenriched",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 168573,
+   "description": "Lemon grass (citronella), raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 167746,
+   "description": "Lemons, raw, without peel",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 175064,
+   "description": "Pie, fried pies, lemon",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 167674,
+   "description": "Restaurant, Chinese, lemon chicken",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173231,
+   "description": "Beverages, tea, instant, lemon, diet",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 175088,
+   "description": "Beverages, tea, instant, lemon, unsweetened",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "lime": [
+  {
+   "fdcId": 168155,
+   "description": "Limes, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 168156,
+   "description": "Lime juice, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169638,
+   "description": "Frozen novelties, ice type, lime",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 168157,
+   "description": "Lime juice, canned or bottled, unsweetened",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 175229,
+   "description": "SILK Key Lime soy yogurt",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173205,
+   "description": "Beverages, carbonated, lemon-lime soda, no caffeine",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173206,
+   "description": "Beverages, carbonated, SPRITE, lemon-lime, without caffeine",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173434,
+   "description": "Yogurt, Greek, 2% fat, key lime blend, CHOBANI",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 175108,
+   "description": "Beverages, COCA-COLA, POWERADE, lemon-lime flavored, ready-to-drink",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "parsley": [
+  {
+   "fdcId": 170416,
+   "description": "Parsley, fresh",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170486,
+   "description": "Parsley, freeze-dried",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170930,
+   "description": "Spices, parsley, dried",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170921,
+   "description": "Spices, coriander leaf, dried",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169997,
+   "description": "Coriander (cilantro) leaves, raw",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "olive oil": [
+  {
+   "fdcId": 167737,
+   "description": "Oil, corn, peanut, and olive",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 1750351,
+   "description": "Oil, olive, extra light",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 748608,
+   "description": "Oil, olive, extra virgin",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 171413,
+   "description": "Oil, olive, salad or cooking",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171443,
+   "description": "Mayonnaise, reduced fat, with olive oil",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 2747652,
+   "description": "Anchovies, canned in olive oil, with salt, drained",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 748278,
+   "description": "Oil, canola",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 172336,
+   "description": "Oil, canola",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171031,
+   "description": "Oil, almond",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173573,
+   "description": "Oil, avocado",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "cumin seeds": [
+  {
+   "fdcId": 170923,
+   "description": "Spices, cumin seed",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170145,
+   "description": "Seeds, breadfruit seeds, boiled",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170144,
+   "description": "Seeds, breadfruit seeds, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170595,
+   "description": "Seeds, breadfruit seeds, roasted",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170554,
+   "description": "Seeds, chia seeds, dried",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170148,
+   "description": "Seeds, hemp seed, hulled",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170149,
+   "description": "Seeds, lotus seeds, dried",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 168591,
+   "description": "Seeds, lotus seeds, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170553,
+   "description": "Seeds, breadnut tree seeds, dried",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170552,
+   "description": "Seeds, breadnut tree seeds, raw",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "yogurt": [
+  {
+   "fdcId": 167722,
+   "description": "Tofu yogurt",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 168104,
+   "description": "Frozen yogurts, chocolate",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 2647437,
+   "description": "Yogurt, plain, nonfat",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 168133,
+   "description": "Babyfood, dessert, peach yogurt",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 167569,
+   "description": "Candies, confectioner's coating, yogurt",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173781,
+   "description": "SILK Blueberry soy yogurt",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173779,
+   "description": "SILK Peach soy yogurt",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 175227,
+   "description": "SILK Plain soy yogurt",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173778,
+   "description": "SILK Raspberry soy yogurt",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 175228,
+   "description": "SILK Strawberry soy yogurt",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "green chilli": [
+  {
+   "fdcId": 2710823,
+   "description": "Asparagus, green, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 170375,
+   "description": "Beet greens, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 2747653,
+   "description": "Beet greens, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 2346407,
+   "description": "Cabbage, green, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 169389,
+   "description": "Cauliflower, green, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169992,
+   "description": "Chicory greens, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169226,
+   "description": "Dandelion greens, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 327046,
+   "description": "Kiwifruit, green, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 168153,
+   "description": "Kiwifruit, green, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169256,
+   "description": "Mustard greens, raw",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "fennel": [
+  {
+   "fdcId": 2747655,
+   "description": "Fennel, bulb, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 169385,
+   "description": "Fennel, bulb, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171323,
+   "description": "Spices, fennel seed",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "coconut milk": [
+  {
+   "fdcId": 174116,
+   "description": "Beverages, coconut milk, sweetened, fortified with calcium, vitamins A, B12, D2",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 168781,
+   "description": "Puddings, coconut cream, dry mix, instant, prepared with 2% milk",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 168827,
+   "description": "Puddings, coconut cream, dry mix, instant, prepared with whole milk",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169615,
+   "description": "Puddings, coconut cream, dry mix, regular, prepared with 2% milk",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 168829,
+   "description": "Puddings, coconut cream, dry mix, regular, prepared with whole milk",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170173,
+   "description": "Nuts, coconut milk, canned (liquid expressed from grated meat and water)",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169409,
+   "description": "Nuts, coconut milk, frozen (liquid expressed from grated meat and water)",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170172,
+   "description": "Nuts, coconut milk, raw (liquid expressed from grated meat and water)",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 2515382,
+   "description": "Flour, coconut",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 171412,
+   "description": "Oil, coconut",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "cream": [
+  {
+   "fdcId": 170857,
+   "description": "Cream, fluid, light (coffee cream or table cream)",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170860,
+   "description": "Cream, whipped, cream topping, pressurized",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173418,
+   "description": "Cheese, cream",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 2346386,
+   "description": "Cream, heavy",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 167531,
+   "description": "Crackers, cream, La Moderna Rikis Cream Crackers",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 167534,
+   "description": "Cream puff, eclair, custard or cream filled, iced",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171263,
+   "description": "Cream substitute, powdered",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171257,
+   "description": "Cream, sour, cultured",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172226,
+   "description": "Ice cream sandwich",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 168809,
+   "description": "Ice creams, chocolate",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "brown sugar": [
+  {
+   "fdcId": 168833,
+   "description": "Sugars, brown",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170675,
+   "description": "Sweeteners, sugar substitute, granulated, brown",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172801,
+   "description": "Toaster pastries, brown-sugar-cinnamon",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170672,
+   "description": "Sweeteners, for baking, brown, contains sugar and sucralose",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173920,
+   "description": "Cereals, oats, instant, fortified, maple and brown sugar, dry",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173907,
+   "description": "Cereals, QUAKER, Instant Oatmeal, maple and brown sugar, dry",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 174659,
+   "description": "Cereals ready-to-eat, QUAKER, Maple Brown Sugar LIFE Cereal",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 174637,
+   "description": "Cereals, QUAKER, Instant Oatmeal, DINOSAUR EGGS, Brown Sugar, dry",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173922,
+   "description": "Cereals, QUAKER, Weight Control Instant Oatmeal, maple and brown sugar",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172999,
+   "description": "Cereals, MALT-O-MEAL, Maple & Brown Sugar Hot Wheat Cereal, dry",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "water": [
+  {
+   "fdcId": 169301,
+   "description": "Water convolvulus,raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171856,
+   "description": "Crackers, water biscuits",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 174158,
+   "description": "Water, bottled, generic",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171869,
+   "description": "Beverages, carbonated, tonic water",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173233,
+   "description": "Beverages, water, bottled, PERRIER",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173647,
+   "description": "Beverages, water, tap, drinking",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 175103,
+   "description": "Beverages, water, tap, municipal",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 175096,
+   "description": "Beverages, water, tap, well",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171666,
+   "description": "Cereals, WHEATENA, cooked with water",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 174859,
+   "description": "Lemonade, powder, prepared with water",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "cornstarch": [
+  {
+   "fdcId": 169698,
+   "description": "Cornstarch",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 174806,
+   "description": "Snacks, Pretzels, gluten- free made with cornstarch and potato flour",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "egg yolks": [
+  {
+   "fdcId": 173428,
+   "description": "Egg, yolk, dried",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 329716,
+   "description": "Egg, yolk, dried",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 748236,
+   "description": "Eggs, Grade A, Large, egg yolk",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 172184,
+   "description": "Egg, yolk, raw, fresh",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171364,
+   "description": "Babyfood, cereal, with egg yolks, junior",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170971,
+   "description": "Babyfood, cereal, with egg yolks, strained",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 329596,
+   "description": "Egg, yolk, raw, frozen, pasteurized",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 173421,
+   "description": "Egg, yolk, raw, frozen, pasteurized",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171366,
+   "description": "Babyfood, cereal, egg yolks and bacon, junior",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173436,
+   "description": "Egg, yolk, raw, frozen, salted, pasteurized",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "puff pastry": [
+  {
+   "fdcId": 172790,
+   "description": "Puff pastry, frozen, ready-to-bake",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172738,
+   "description": "Puff pastry, frozen, ready-to-bake, baked",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 167528,
+   "description": "Pastry, Pastelitos de Guava (guava pastries)",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172754,
+   "description": "Danish pastry, cheese",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172753,
+   "description": "Danish pastry, cinnamon, enriched",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172824,
+   "description": "Danish pastry, cinnamon, unenriched",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172827,
+   "description": "Danish pastry, lemon, unenriched",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 175061,
+   "description": "Danish pastry, raspberry, unenriched",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 1104913,
+   "description": "Flour, pastry, unenriched, unbleached",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 170047,
+   "description": "Potato puffs, frozen, unprepared",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "mustard": [
+  {
+   "fdcId": 172337,
+   "description": "Oil, mustard",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169891,
+   "description": "Cabbage, mustard, salted",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169256,
+   "description": "Mustard greens, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 326698,
+   "description": "Mustard, prepared, yellow",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 172234,
+   "description": "Mustard, prepared, yellow",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169258,
+   "description": "Mustard greens, frozen, unprepared",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 168438,
+   "description": "Mustard spinach, (tendergreen), raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170929,
+   "description": "Spices, mustard seed, ground",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171046,
+   "description": "Dressing, honey mustard, fat-free",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171043,
+   "description": "Salad dressing, honey mustard, regular",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "thyme": [
+  {
+   "fdcId": 173470,
+   "description": "Thyme, fresh",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170938,
+   "description": "Spices, thyme, dried",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "green beans": [
+  {
+   "fdcId": 169965,
+   "description": "Beans, snap, green, microwaved",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 2346400,
+   "description": "Beans, snap, green, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 169961,
+   "description": "Beans, snap, green, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169049,
+   "description": "Babyfood, green beans and turkey, strained",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172273,
+   "description": "Babyfood, green beans, dices, toddler",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173504,
+   "description": "Babyfood, vegetable, green beans and potatoes",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172272,
+   "description": "Babyfood, vegetables, green beans, junior",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172271,
+   "description": "Babyfood, vegetables, green beans, strained",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169321,
+   "description": "Beans, snap, green, cooked, boiled, drained, with salt",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169964,
+   "description": "Beans, snap, green, frozen, all styles, microwaved",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "rapeseed oil": [
+  {
+   "fdcId": 748278,
+   "description": "Oil, canola",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 172336,
+   "description": "Oil, canola",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171031,
+   "description": "Oil, almond",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173573,
+   "description": "Oil, avocado",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171428,
+   "description": "Oil, babassu",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171412,
+   "description": "Oil, coconut",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 330458,
+   "description": "Oil, coconut",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 748323,
+   "description": "Oil, corn",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 171028,
+   "description": "Oil, grapeseed",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171427,
+   "description": "Oil, hazelnut",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "stir-fry vegetables": [
+  {
+   "fdcId": 168435,
+   "description": "Mushrooms, shiitake, stir-fried",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 169253,
+   "description": "Mushrooms, white, stir-fried",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 175036,
+   "description": "Tortillas, ready-to-bake or -fry, corn",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 168551,
+   "description": "Lentils, sprouted, cooked, stir-fried, with salt",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172331,
+   "description": "Shortening frying (heavy duty), palm (hydrogenated)",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 175037,
+   "description": "Tortillas, ready-to-bake or -fry, flour, refrigerated",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 174081,
+   "description": "Tortillas, ready-to-bake or -fry, whole wheat",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172284,
+   "description": "Babyfood, vegetables, garden vegetable, strained",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172283,
+   "description": "Babyfood, vegetables, mix vegetables junior",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 173515,
+   "description": "Babyfood, vegetables, mix vegetables strained",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "ground ginger": [
+  {
+   "fdcId": 170926,
+   "description": "Spices, ginger, ground",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 2262075,
+   "description": "Flaxseed, ground",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 2727571,
+   "description": "Bison, ground, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 171116,
+   "description": "Chicken, ground, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172832,
+   "description": "Emu, ground, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 174370,
+   "description": "Lamb, ground, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 2727570,
+   "description": "Lamb, ground, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 174481,
+   "description": "Ostrich, ground, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 2514745,
+   "description": "Pork, ground, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 171315,
+   "description": "Spices, allspice, ground",
+   "dataType": "SR Legacy"
+  }
+ ],
+ "minced garlic": [
+  {
+   "fdcId": 173865,
+   "description": "Ham, minced",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 175019,
+   "description": "Pie, mince, prepared from recipe",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 174594,
+   "description": "Luncheon meat, pork and chicken, minced, canned, includes Spam Lite",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172951,
+   "description": "Luncheon meat, pork with ham, minced, canned, includes Spam (Hormel)",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 1104647,
+   "description": "Garlic, raw",
+   "dataType": "Foundation"
+  },
+  {
+   "fdcId": 169230,
+   "description": "Garlic, raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 167939,
+   "description": "Garlic bread, frozen",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 171325,
+   "description": "Spices, garlic powder",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 170789,
+   "description": "PIZZA HUT, breadstick, parmesan garlic",
+   "dataType": "SR Legacy"
+  },
+  {
+   "fdcId": 172950,
+   "description": "Luncheon meat, pork, ham, and chicken, minced, canned, reduced sodium, added ascorbic acid, includes SPAM, 25% less sodium",
+   "dataType": "SR Legacy"
+  }
+ ]
+}
