@@ -65,6 +65,20 @@ func TestSearchErrorsHideTheKey(t *testing.T) {
 	}
 }
 
+func TestBuildRequestErrorHidesTheKey(t *testing.T) {
+	// A malformed base URL makes http.NewRequestWithContext fail with a
+	// url.Error that embeds the full endpoint, api_key included. That error
+	// must be sanitized like every other transport error.
+	c := NewHTTPClient("http://example.com/\x7f", "test-key", time.Second)
+	_, err := c.Search(context.Background(), "salt")
+	if err == nil {
+		t.Fatal("want error for malformed base URL")
+	}
+	if strings.Contains(err.Error(), "test-key") {
+		t.Errorf("err = %v, must not contain the API key", err)
+	}
+}
+
 func TestSearchMalformedJSON(t *testing.T) {
 	c, srv := newTestClient(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`{not json`))

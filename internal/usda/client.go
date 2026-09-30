@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -45,14 +46,15 @@ func (c *HTTPClient) do(ctx context.Context, method, path string, params url.Val
 	}
 	req, err := http.NewRequestWithContext(ctx, method, endpoint, reader)
 	if err != nil {
-		return nil, fmt.Errorf("usda: build request for %s: %w", path, err)
+		// A url.Error here embeds the full endpoint, api_key included.
+		return nil, fmt.Errorf("usda: build request for %s: %w", path, c.sanitize(err))
 	}
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("usda: %s: %w", path, sanitizeURLError(err, endpoint, c.baseURL+path))
+		return nil, fmt.Errorf("usda: %s: %w", path, c.sanitize(err))
 	}
 	defer func() {
 		if cerr := resp.Body.Close(); cerr != nil {
@@ -69,10 +71,18 @@ func (c *HTTPClient) do(ctx context.Context, method, path string, params url.Val
 	return out, nil
 }
 
-// sanitizeURLError strips the query string (which holds api_key) from
-// transport errors, which embed the full request URL.
-func sanitizeURLError(err error, full, safe string) error {
-	return fmt.Errorf("%s", strings.ReplaceAll(err.Error(), full, safe))
+// sanitize redacts the API key from an error's text. Transport and URL
+// errors embed the full request URL — sometimes quoted or escaped — so the
+// key value itself (raw and query-escaped) is redacted rather than trying
+// to match the URL string.
+func (c *HTTPClient) sanitize(err error) error {
+	msg := err.Error()
+	for _, s := range []string{url.QueryEscape(c.apiKey), c.apiKey} {
+		if s != "" {
+			msg = strings.ReplaceAll(msg, s, "REDACTED")
+		}
+	}
+	return errors.New(msg)
 }
 
 // Search returns generic foods matching query, best match first. Branded and
