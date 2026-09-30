@@ -61,6 +61,14 @@ services:
       MEALDB_DETAIL_TTL_HOURS: ${MEALDB_DETAIL_TTL_HOURS:-168}
       MEALDB_SEARCH_TTL_HOURS: ${MEALDB_SEARCH_TTL_HOURS:-24}
       MEALDB_CACHE_RETENTION_DAYS: ${MEALDB_CACHE_RETENTION_DAYS:-30}
+
+      # USDA FoodData Central (nutrition estimates)
+      USDA_API_KEY: ${USDA_API_KEY:-DEMO_KEY}
+      USDA_BASE_URL: ${USDA_BASE_URL:-https://api.nal.usda.gov/fdc/v1}
+      USDA_TIMEOUT_SECONDS: ${USDA_TIMEOUT_SECONDS:-5}
+      USDA_MATCH_TTL_HOURS: ${USDA_MATCH_TTL_HOURS:-720}
+      USDA_FOOD_TTL_HOURS: ${USDA_FOOD_TTL_HOURS:-2160}
+      NUTRITION_TTL_HOURS: ${NUTRITION_TTL_HOURS:-168}
     depends_on:
       postgres:
         condition: service_healthy

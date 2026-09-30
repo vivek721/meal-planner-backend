@@ -8,8 +8,9 @@ runs locally or in Docker Compose with a PostgreSQL container.
 
 Frontend (React + TypeScript): [vivek721/meal-planner-frontend](https://github.com/vivek721/meal-planner-frontend)
 
-> Status: the authentication and user-account API and recipe search are implemented. Meal plans,
-> shopping lists and recommendations are planned but not built yet (see [Roadmap](#roadmap)).
+> Status: the authentication and user-account API, recipe search and USDA nutrition estimates are
+> implemented. Meal plans, shopping lists and recommendations are planned but not built yet (see
+> [Roadmap](#roadmap)).
 
 ## Features
 
@@ -104,6 +105,7 @@ Every error response has the form `{"error": "<message>"}`.
 | GET | `/api/recipes/:id` | Bearer | Recipe detail: ingredients, measures, instructions, tags |
 | GET | `/api/recipes/categories` | Bearer | List of TheMealDB categories with thumbnail and description |
 | GET | `/api/recipes/cuisines` | Bearer | Sorted list of TheMealDB cuisines (areas) |
+| GET | `/api/recipes/:id/nutrition` | Bearer | Whole-recipe nutrition estimated from USDA FoodData Central: totals, coverage ("11 of 13 ingredients") and a per-ingredient breakdown. `503` when FDC is unreachable and nothing is cached |
 
 Example:
 
@@ -182,6 +184,12 @@ These are read in `internal/config/config.go`. A `.env` file is loaded if one ex
 | `MEALDB_DETAIL_TTL_HOURS` | `168` | Cache TTL for recipe lookups, categories and cuisines |
 | `MEALDB_SEARCH_TTL_HOURS` | `24` | Cache TTL for name/category/cuisine/ingredient searches |
 | `MEALDB_CACHE_RETENTION_DAYS` | `30` | How long expired `mealdb_cache` rows are kept before being purged |
+| `USDA_API_KEY` | `DEMO_KEY` | USDA FoodData Central key. Get a free one at [api.data.gov](https://api.data.gov/signup/); `DEMO_KEY` allows only 10 requests/hour |
+| `USDA_BASE_URL` | `https://api.nal.usda.gov/fdc/v1` | FDC API base URL |
+| `USDA_TIMEOUT_SECONDS` | `5` | HTTP client timeout for FDC requests |
+| `USDA_MATCH_TTL_HOURS` | `720` | Cache TTL for ingredient-name-to-food matching decisions |
+| `USDA_FOOD_TTL_HOURS` | `2160` | Cache TTL for per-food nutrients and portions |
+| `NUTRITION_TTL_HOURS` | `168` | Cache TTL for finished per-recipe estimates |
 
 `RATE_LIMIT_ENABLED` and `RATE_LIMIT_PER_MIN` appear in `.env.example` and are parsed into the
 config, but no code reads them yet.
@@ -205,6 +213,27 @@ retention window are left alone since stale-on-error can still need them.
 Recipe data and images from TheMealDB (themealdb.com). The public API key `1` is for development
 and educational use; a public production deployment should follow TheMealDB's supporter terms.
 
+## Nutrition (USDA FoodData Central)
+
+`GET /api/recipes/:id/nutrition` estimates a recipe's nutrition from its ingredient list using
+[USDA FoodData Central](https://fdc.nal.usda.gov/) (FDC). Each ingredient's free-text measure
+("3/4 cup", "1kg", "2 chicken breasts") is parsed and converted to grams via FDC's portion data,
+and the matched food's per-100 g nutrients are scaled and summed. The response reports
+whole-recipe totals only — TheMealDB gives no serving count, so per-serving figures would be an
+estimate built on a guess — plus a coverage line ("11 of 13 ingredients") and a per-ingredient
+breakdown tracing every line to the FDC food it matched, or to the reason it was not counted
+(`unmeasurable`, `noMatch` or `noPortion`). Amounts that cannot be converted honestly are never
+guessed. A committed overrides file
+(`internal/nutrition/overrides/overrides.json`) pins known-bad matches and per-item weights;
+editing it retires every cached result built from the old version.
+
+FDC responses are cached in the same `mealdb_cache` table (matching decisions for
+`USDA_MATCH_TTL_HOURS`, food records for `USDA_FOOD_TTL_HOURS`, finished estimates for
+`NUTRITION_TTL_HOURS`), so a recipe's repeat views make no FDC calls. If FDC is down, an expired
+cached copy is served; with nothing cached the endpoint returns `503` while the recipe itself is
+unaffected. Data: [USDA FoodData Central](https://fdc.nal.usda.gov/); get a free API key at
+[api.data.gov](https://api.data.gov/signup/) (the default `DEMO_KEY` allows 10 requests/hour).
+
 ## Running Tests
 
 ```bash
@@ -225,7 +254,7 @@ These items are planned (see `docs/epics/`) and **not implemented yet**:
 
 - Meal-planning API: weekly meal plans
 - Shopping-list generation from meal plans
-- Meal recommendations and nutrition analysis
+- Meal recommendations
 - Notifications (email) and admin features
 - Rate limiting, server-side token revocation, separate long-lived refresh tokens
 - Integration tests against PostgreSQL (repository layer)
