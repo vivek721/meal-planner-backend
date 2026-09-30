@@ -2,6 +2,7 @@ package services
 
 import (
 	"math"
+	"regexp"
 	"strings"
 
 	"github.com/meal-planner/backend/internal/nutrition/measure"
@@ -82,7 +83,7 @@ func portionMl(p usda.Portion) float64 {
 	if p.Amount <= 0 {
 		return 0
 	}
-	desc := strings.ToLower(p.Unit + " " + p.Modifier)
+	desc := portionText(p)
 	var unit float64
 	switch {
 	case strings.Contains(desc, "cup"):
@@ -99,6 +100,17 @@ func portionMl(p usda.Portion) float64 {
 		return 0
 	}
 	return unit * p.Amount
+}
+
+// parenNoteRe matches parenthesised notes in FDC portion text, such as the
+// "(1/8 cup)" in "tbsp (1/8 cup)" or the size in `medium (2-1/2" dia)`.
+var parenNoteRe = regexp.MustCompile(`\([^)]*\)`)
+
+// portionText is the lower-cased unit and modifier of a portion with
+// parenthesised notes removed, so a note's unit is never read as the
+// portion's own.
+func portionText(p usda.Portion) string {
+	return strings.ToLower(parenNoteRe.ReplaceAllString(p.Unit+" "+p.Modifier, " "))
 }
 
 // hasWord reports whether desc contains any of words as a whole token, so

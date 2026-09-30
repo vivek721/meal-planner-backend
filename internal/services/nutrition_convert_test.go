@@ -62,6 +62,21 @@ func TestGramsForVolumeUsesAnyVolumePortion(t *testing.T) {
 	}
 }
 
+func TestGramsForVolumeIgnoresParentheticalUnits(t *testing.T) {
+	// Real FDC portions for "Vegetable oil, palm kernel" (171422). The first
+	// is 2 tbsp; its "(1/8 cup)" note must not turn it into 2 cups.
+	portions := []usda.Portion{
+		{Amount: 2, Unit: "undetermined", Modifier: "tbsp (1/8 cup)", GramWeight: 27},
+		{Amount: 1, Unit: "undetermined", Modifier: "tablespoon", GramWeight: 13.6},
+		{Amount: 1, Unit: "undetermined", Modifier: "cup", GramWeight: 218},
+	}
+	// 1 tbs = 14.7868 ml -> 13.5 g
+	g, ok := gramsFor(measure.Amount{Kind: measure.Volume, Value: 14.7868}, "vegetable oil", overrides.Override{}, portions)
+	if !ok || g < 13.4 || g > 13.6 {
+		t.Errorf("1 tbsp oil = %v g, %v; want about 13.5", g, ok)
+	}
+}
+
 func TestGramsForCount(t *testing.T) {
 	// Override itemGrams wins.
 	g, ok := gramsFor(measure.Amount{Kind: measure.Count, Value: 2}, "chicken breasts",
