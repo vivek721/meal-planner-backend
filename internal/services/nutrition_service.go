@@ -2,12 +2,18 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 	"sort"
+	"strconv"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/meal-planner/backend/internal/mealdb"
+	"github.com/meal-planner/backend/internal/models"
 	"github.com/meal-planner/backend/internal/nutrition/measure"
 	"github.com/meal-planner/backend/internal/nutrition/overrides"
 	"github.com/meal-planner/backend/internal/repository"
@@ -103,7 +109,18 @@ func NewNutritionService(recipes RecipeService, client usda.Client, cache reposi
 }
 
 func (s *nutritionService) Estimate(ctx context.Context, mealID string) (*RecipeNutrition, error) {
-	return s.estimate(ctx, mealID)
+	key := "nutrition:" + s.ov.Version() + ":" + mealID
+	v, err := cached(ctx, s.rc, key, s.ttl.Result, func(ctx context.Context) (RecipeNutrition, error) {
+		out, err := s.estimate(ctx, mealID)
+		if err != nil {
+			return RecipeNutrition{}, err
+		}
+		return *out, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &v, nil
 }
 
 // estimate builds a fresh estimate: load the meal, match measurable
@@ -125,21 +142,50 @@ func (s *nutritionService) estimate(ctx context.Context, mealID string) (*Recipe
 	return &out, nil
 }
 
+// maxConcurrentSearches caps in-flight FDC search calls per estimate.
+const maxConcurrentSearches = 4
+
+// matchResult is a cached matching decision; FDCID 0 records "no match" so
+// hopeless ingredients do not re-hit FDC for every recipe that uses them.
+type matchResult struct {
+	FDCID int `json:"fdcId"`
+}
+
 // matchAll resolves each distinct measurable ingredient name to an FDC id
-// (0 = no match). Overrides with a pinned fdcId skip the search entirely.
+// (0 = no match). Overrides with a pinned fdcId skip the search entirely;
+// searched decisions are cached under the matcher version.
 func (s *nutritionService) matchAll(ctx context.Context, ingredients []mealdb.Ingredient) (map[string]int, error) {
 	names := distinctMeasurableNames(ingredients)
+	results := make([]int, len(names))
+	g, gctx := errgroup.WithContext(ctx)
+	g.SetLimit(maxConcurrentSearches)
+	for i, name := range names {
+		g.Go(func() error {
+			if o, ok := s.ov.Get(name); ok && o.FDCID > 0 {
+				results[i] = o.FDCID
+				return nil
+			}
+			key := "usda:match:" + s.ov.Version() + ":" + name
+			m, err := cached(gctx, s.rc, key, s.ttl.Match, func(ctx context.Context) (matchResult, error) {
+				found, err := s.client.Search(ctx, name)
+				if err != nil {
+					return matchResult{}, err
+				}
+				return matchResult{FDCID: pickMatch(name, found)}, nil
+			})
+			if err != nil {
+				return err //nolint:wrapcheck // already an ErrUpstreamUnavailable from cached
+			}
+			results[i] = m.FDCID
+			return nil
+		})
+	}
+	if err := g.Wait(); err != nil {
+		return nil, err //nolint:wrapcheck // already wrapped
+	}
 	out := make(map[string]int, len(names))
-	for _, name := range names {
-		if o, ok := s.ov.Get(name); ok && o.FDCID > 0 {
-			out[name] = o.FDCID
-			continue
-		}
-		results, err := s.client.Search(ctx, name)
-		if err != nil {
-			return nil, wrapUnavailable(err)
-		}
-		out[name] = pickMatch(name, results)
+	for i, name := range names {
+		out[name] = results[i]
 	}
 	return out, nil
 }
@@ -176,18 +222,62 @@ func matchedIDs(matches map[string]int) []int {
 	return ids
 }
 
-// fetchFoods loads the needed foods from FDC.
+func foodKey(id int) string { return "usda:food:" + strconv.Itoa(id) }
+
+// fetchFoods returns the foods for ids: fresh cache entries first, then one
+// batched Foods call for the rest. On an upstream error, expired entries
+// stand in where they exist; an id with nothing at all fails the estimate.
+// An id FDC no longer returns is simply absent from the result, and the
+// ingredient is reported noMatch.
 func (s *nutritionService) fetchFoods(ctx context.Context, ids []int) (map[int]usda.Food, error) {
 	out := make(map[int]usda.Food, len(ids))
-	if len(ids) == 0 {
+	stale := map[int]usda.Food{}
+	var missing []int
+	for _, id := range ids {
+		entry, err := s.rc.repo.Get(foodKey(id))
+		if err != nil {
+			log.Printf("nutrition cache: read %q: %v", foodKey(id), err)
+			entry = nil
+		}
+		if entry != nil {
+			var f usda.Food
+			if jsonErr := json.Unmarshal([]byte(entry.Payload), &f); jsonErr == nil {
+				if s.rc.now().Before(entry.ExpiresAt) {
+					out[id] = f
+					continue
+				}
+				stale[id] = f
+			}
+		}
+		missing = append(missing, id)
+	}
+	if len(missing) == 0 {
 		return out, nil
 	}
-	foods, err := s.client.Foods(ctx, ids)
+
+	fetched, err := s.client.Foods(ctx, missing)
 	if err != nil {
-		return nil, wrapUnavailable(err)
+		for _, id := range missing {
+			f, ok := stale[id]
+			if !ok {
+				return nil, wrapUnavailable(err)
+			}
+			out[id] = f
+		}
+		log.Printf("nutrition cache: serving stale foods after upstream error: %v", err)
+		return out, nil
 	}
-	for _, f := range foods {
+	now := s.rc.now()
+	for _, f := range fetched {
 		out[f.FDCID] = f
+		if payload, mErr := json.Marshal(f); mErr == nil {
+			if upErr := s.rc.repo.Upsert(&models.CachedResponse{
+				Key: foodKey(f.FDCID), Payload: string(payload),
+				FetchedAt: now, ExpiresAt: now.Add(s.ttl.Food),
+			}); upErr != nil {
+				log.Printf("nutrition cache: write %q: %v", foodKey(f.FDCID), upErr)
+			}
+		}
 	}
 	return out, nil
 }

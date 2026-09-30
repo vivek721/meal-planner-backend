@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/meal-planner/backend/internal/mealdb"
+	"github.com/meal-planner/backend/internal/models"
 	"github.com/meal-planner/backend/internal/nutrition/overrides"
 	"github.com/meal-planner/backend/internal/testutil"
 	"github.com/meal-planner/backend/internal/usda"
@@ -220,5 +221,135 @@ func TestEstimateUpstreamFailure(t *testing.T) {
 	f.client.Err = errors.New("fdc down")
 	if _, err := f.svc.Estimate(context.Background(), "6"); !errors.Is(err, ErrUpstreamUnavailable) {
 		t.Fatalf("err = %v, want ErrUpstreamUnavailable", err)
+	}
+}
+
+func cacheKeys(m map[string]*models.CachedResponse) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	return out
+}
+
+func TestEstimateResultCachedAndVersioned(t *testing.T) {
+	f := newNutritionFixture(t, `{}`)
+	f.seedSoySauce()
+	f.seedMeal("52772", mealdb.Ingredient{Name: "soy sauce", Measure: "1 tbs"})
+
+	ctx := context.Background()
+	if _, err := f.svc.Estimate(ctx, "52772"); err != nil {
+		t.Fatalf("first: %v", err)
+	}
+	searches, foods := f.client.SearchCalls, f.client.FoodsCalls
+	if _, err := f.svc.Estimate(ctx, "52772"); err != nil {
+		t.Fatalf("second: %v", err)
+	}
+	if f.client.SearchCalls != searches || f.client.FoodsCalls != foods {
+		t.Error("repeat view must make no FDC calls")
+	}
+	if _, ok := f.cache.Entries["nutrition:"+f.ov.Version()+":52772"]; !ok {
+		t.Errorf("result cache key missing; have %v", cacheKeys(f.cache.Entries))
+	}
+
+	// A different overrides version misses the old result cache.
+	ov2, err := overrides.Parse([]byte(`{"salt": {"fdcId": 173468}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	svc2 := NewNutritionService(f.recipes.svc, f.client, f.cache, ov2,
+		NutritionTTL{Match: time.Hour, Food: time.Hour, Result: time.Hour},
+		func() time.Time { return f.now })
+	if _, err := svc2.Estimate(ctx, "52772"); err != nil {
+		t.Fatalf("versioned: %v", err)
+	}
+	if f.client.SearchCalls == searches {
+		t.Error("new matcher version must refetch, not reuse the old cache")
+	}
+}
+
+func TestMatchCacheSharedAcrossCaseVariants(t *testing.T) {
+	f := newNutritionFixture(t, `{}`)
+	f.seedSoySauce()
+	f.seedMeal("7", mealdb.Ingredient{Name: "Soy_Sauce", Measure: "1 tbs"})
+	f.seedMeal("8", mealdb.Ingredient{Name: "soy  sauce", Measure: "2 tbs"})
+
+	ctx := context.Background()
+	if _, err := f.svc.Estimate(ctx, "7"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.svc.Estimate(ctx, "8"); err != nil {
+		t.Fatal(err)
+	}
+	if f.client.SearchCalls != 1 {
+		t.Errorf("SearchCalls = %d, want 1: variants share the usda:match key", f.client.SearchCalls)
+	}
+}
+
+func TestNoMatchIsCachedToo(t *testing.T) {
+	f := newNutritionFixture(t, `{}`)
+	f.client.SearchResults["unicorn"] = nil
+	f.seedMeal("9", mealdb.Ingredient{Name: "unicorn", Measure: "1"})
+	f.seedMeal("10", mealdb.Ingredient{Name: "unicorn", Measure: "2"})
+	ctx := context.Background()
+	if _, err := f.svc.Estimate(ctx, "9"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.svc.Estimate(ctx, "10"); err != nil {
+		t.Fatal(err)
+	}
+	if f.client.SearchCalls != 1 {
+		t.Errorf("SearchCalls = %d, want 1: a no-match decision is cached", f.client.SearchCalls)
+	}
+}
+
+func TestStaleResultServedOnUpstreamError(t *testing.T) {
+	f := newNutritionFixture(t, `{}`)
+	f.seedSoySauce()
+	f.seedMeal("52772", mealdb.Ingredient{Name: "soy sauce", Measure: "1 tbs"})
+	ctx := context.Background()
+	if _, err := f.svc.Estimate(ctx, "52772"); err != nil {
+		t.Fatal(err)
+	}
+
+	f.now = f.now.Add(30 * 24 * time.Hour) // result expired
+	f.client.Err = errors.New("fdc down")
+	got, err := f.svc.Estimate(ctx, "52772")
+	if err != nil || got.Coverage.Counted != 1 {
+		t.Fatalf("stale result must be served: %+v, %v", got, err)
+	}
+}
+
+func TestPartialFailureCachesNothing(t *testing.T) {
+	f := newNutritionFixture(t, `{}`)
+	f.seedSoySauce()
+	f.seedMeal("11", mealdb.Ingredient{Name: "soy sauce", Measure: "1 tbs"})
+	f.client.FoodsErr = errors.New("fdc down mid-flight") // search succeeds, foods fails
+	if _, err := f.svc.Estimate(context.Background(), "11"); !errors.Is(err, ErrUpstreamUnavailable) {
+		t.Fatalf("err = %v", err)
+	}
+	if _, ok := f.cache.Entries["nutrition:"+f.ov.Version()+":11"]; ok {
+		t.Error("a partial result must never be cached")
+	}
+}
+
+func TestSearchConcurrencyLimitedToFour(t *testing.T) {
+	f := newNutritionFixture(t, `{}`)
+	ings := make([]mealdb.Ingredient, 10)
+	for i := range ings {
+		name := "ingredient" + string(rune('a'+i))
+		ings[i] = mealdb.Ingredient{Name: name, Measure: "100g"}
+		f.client.SearchResults[name] = []usda.SearchFood{{FDCID: 100 + i, Description: name + ", raw"}}
+		f.client.FoodsByID[100+i] = usda.Food{FDCID: 100 + i, Description: name, Per100g: usda.Nutrients{usda.Calories: 1}}
+	}
+	f.seedMeal("12", ings...)
+	if _, err := f.svc.Estimate(context.Background(), "12"); err != nil {
+		t.Fatal(err)
+	}
+	if f.client.MaxConcurrentSearches > 4 {
+		t.Errorf("MaxConcurrentSearches = %d, want <= 4", f.client.MaxConcurrentSearches)
+	}
+	if f.client.SearchCalls != 10 {
+		t.Errorf("SearchCalls = %d, want 10", f.client.SearchCalls)
 	}
 }
